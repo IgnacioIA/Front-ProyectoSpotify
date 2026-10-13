@@ -1,0 +1,10 @@
+<div class="player-volume-container">
+  <span>🔊 Volumen: </span>
+  <input 
+    type="range" 
+    min="0" 
+    max="1" 
+    step="0.01" 
+    value="1" 
+    (input)="onVolumeChange($event)">
+</div>
