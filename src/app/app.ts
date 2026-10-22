@@ -36,16 +36,22 @@ export class AppComponent implements OnInit, OnDestroy {
   ) {}
 
   ngOnInit(): void {
-    this.http.get<any[]>(this.apiUrl).subscribe({
-      next: (data) => {
-        this.canciones = data;
-        this.cdr.detectChanges();
-      },
-      error: (err) => {
-        console.error('Error al conectar con el backend:', err);
-      }
-    });
-  }
+  // Cargar canciones
+  this.http.get<any[]>(this.apiUrl).subscribe({
+    next: (data) => {
+      this.canciones = data;
+      this.cdr.detectChanges();
+    }
+  });
+
+  //  Cargar playlists del backend
+  this.http.get<any[]>('http://localhost:8080/api/playlists').subscribe({
+    next: (data) => {
+      this.playlists = data;
+      this.cdr.detectChanges();
+    }
+  });
+}
 
   ngOnDestroy(): void {
     this.detenerIntervalo();
@@ -86,18 +92,21 @@ export class AppComponent implements OnInit, OnDestroy {
   }
 
   crearPlaylist(): void {
-    if (!this.nombreNuevaPlaylist.trim()) return;
+  if (!this.nombreNuevaPlaylist.trim()) return;
 
-    const nueva = {
-      id: Date.now(),
-      nombre: this.nombreNuevaPlaylist.trim(),
-      canciones: []
-    };
+  const nuevaPlaylist = { nombre: this.nombreNuevaPlaylist.trim() };
 
-    this.playlists.push(nueva);
-    this.cerrarModalPlaylist();
-    this.cdr.detectChanges();
-  }
+  this.http.post<any>('http://localhost:8080/api/playlists', nuevaPlaylist).subscribe({
+    next: (playlistCreada) => {
+      this.playlists.push(playlistCreada);
+      this.cerrarModalPlaylist();
+      this.cdr.detectChanges();
+    },
+    error: (err) => {
+      console.error('Error al crear la playlist:', err);
+    }
+  });
+}
 
   seleccionarPlaylist(playlist: any): void {
     this.playlistSeleccionada = playlist;
@@ -123,13 +132,26 @@ export class AppComponent implements OnInit, OnDestroy {
   }
 
   agregarAPlaylist(cancion: any, playlist: any, event: Event): void {
-    event.stopPropagation();
-    if (!playlist.canciones.some((c: any) => c.id === cancion.id)) {
-      playlist.canciones.push(cancion);
+  event.stopPropagation();
+
+  this.http.post<any>(`http://localhost:8080/api/playlists/${playlist.id}/canciones/${cancion.id}`, {}).subscribe({
+    next: (playlistActualizada) => {
+      // Actualizamos la playlist local con la respuesta del backend
+      const index = this.playlists.findIndex(p => p.id === playlist.id);
+      if (index !== -1) {
+        this.playlists[index] = playlistActualizada;
+        if (this.playlistSeleccionada?.id === playlist.id) {
+          this.playlistSeleccionada = playlistActualizada;
+        }
+      }
+      this.cancionParaPlaylist = null;
+      this.cdr.detectChanges();
+    },
+    error: (err) => {
+      console.error('Error al agregar la canción a la playlist:', err);
     }
-    this.cancionParaPlaylist = null;
-    this.cdr.detectChanges();
-  }
+  });
+}
 
   formatearDuracion(segundos: number): string {
     if (!segundos) return '0:00';
@@ -160,10 +182,14 @@ export class AppComponent implements OnInit, OnDestroy {
   }
 
   toggleFavorito(cancion: any, event: Event): void {
-    event.stopPropagation();
-    cancion.favorito = !cancion.favorito;
-    this.cdr.detectChanges();
-  }
+  event.stopPropagation();
+  this.http.patch<any>(`http://localhost:8080/api/canciones/${cancion.id}/favorito`, {}).subscribe({
+    next: (cancionActualizada) => {
+      cancion.favorito = cancionActualizada.favorito;
+      this.cdr.detectChanges();
+    }
+  });
+}
 
   private gestionarReproduccion(): void {
     if (this.reproduciendo) {
