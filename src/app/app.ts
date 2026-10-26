@@ -170,6 +170,28 @@ export class AppComponent implements OnInit, OnDestroy {
     this.cdr.detectChanges();
   }
 
+  // Eliminar playlist (US 12)
+  eliminarPlaylist(playlist: any): void {
+    if (!playlist || !playlist.id) return;
+
+    this.http.delete(`http://localhost:8080/api/playlists/${playlist.id}`).subscribe({
+      next: () => {
+        // Eliminar la playlist de la lista de playlists
+        this.playlists = this.playlists.filter(p => p.id !== playlist.id);
+
+        // Si la playlist eliminada era la que estaba seleccionada, limpiar la vista personalizada
+        if (this.playlistSeleccionada?.id === playlist.id) {
+          this.playlistSeleccionada = null;
+        }
+
+        this.cdr.detectChanges();
+      },
+      error: (err) => {
+        console.error('Error al eliminar la playlist:', err);
+      }
+    });
+  }
+
   seleccionarArtista(artista: Artista): void {
     this.artistaSeleccionado = artista;
     this.playlistSeleccionada = null;

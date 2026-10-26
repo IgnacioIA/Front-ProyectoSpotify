@@ -295,12 +295,21 @@
       </div>
     </section>
 
-    <!-- Lista de Canciones Disponibles -->
+    <!-- Lista de Canciones Disponibles / Playlist Seleccionada -->
     <section>
-      <h2 style="font-size: 1.4rem; margin-bottom: 20px;">
-        {{ playlistSeleccionada ? 'Playlist: ' + playlistSeleccionada.nombre : (soloFavoritas ? 'Tus Canciones
-        Favoritas' : 'Canciones Disponibles') }}
-      </h2>
+      <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; flex-wrap: wrap; gap: 10px;">
+        <h2 style="font-size: 1.4rem; margin: 0;">
+          {{ playlistSeleccionada ? 'Playlist: ' + playlistSeleccionada.nombre : (soloFavoritas ? 'Tus Canciones
+          Favoritas' : 'Canciones Disponibles') }}
+        </h2>
+        <!-- Opción "Eliminar playlist" cuando selecciono la playlist (US12) -->
+        <button *ngIf="playlistSeleccionada" (click)="eliminarPlaylist(playlistSeleccionada)"
+          style="background: #282828; color: #ff4d4d; border: 1px solid #ff4d4d; padding: 8px 16px; border-radius: 20px; font-weight: bold; cursor: pointer; transition: all 0.2s;"
+          onmouseover="this.style.background='#ff4d4d'; this.style.color='white'"
+          onmouseout="this.style.background='#282828'; this.style.color='#ff4d4d'">
+          Eliminar playlist
+        </button>
+      </div>
 
       <div
         style="display: flex; flex-direction: column; gap: 12px; max-width: 900px; max-height: 520px; overflow-y: auto; padding-right: 10px;">
