@@ -3,14 +3,15 @@ import { CommonModule } from '@angular/common';
 import { RouterOutlet } from '@angular/router';
 import { HttpClient } from '@angular/common/http';
 import { FormsModule } from '@angular/forms';
-import { PlayerBarComponent } from './layout/player-bar/player-bar.component';
 import { ArtistaService } from './artista.service';
 import { Artista } from './artista.model';
+import { HistorialService } from './historial.service';
+import { Historial } from './historial.model';
 
 @Component({
   selector: 'app-root',
   standalone: true,
-  imports: [CommonModule, RouterOutlet, FormsModule, PlayerBarComponent],
+  imports: [CommonModule, RouterOutlet, FormsModule],
   templateUrl: './app.html',
   styleUrl: './app.css'
 })
@@ -24,7 +25,7 @@ export class AppComponent implements OnInit, OnDestroy {
   nombreNuevaPlaylist: string = '';
   mostrarModalCrearPlaylist: boolean = false;
   playlistSeleccionada: any = null;
-  cancionParaPlaylist: any = null; 
+  cancionParaPlaylist: any = null;
 
   cancionActual: any = null;
   reproduciendo: boolean = false;
@@ -36,13 +37,18 @@ export class AppComponent implements OnInit, OnDestroy {
   soloArtistasFavoritos: boolean = false;
   artistaSeleccionado: Artista | null = null;
 
+  // Propiedades para historial de reproducción (US 9)
+  historial: Historial[] = [];
+  viendoHistorial: boolean = false;
+
   private apiUrl = 'http://localhost:8080/api/canciones';
 
   constructor(
     private http: HttpClient,
     private artistaService: ArtistaService,
+    private historialService: HistorialService,
     private cdr: ChangeDetectorRef
-  ) {}
+  ) { }
 
   ngOnInit(): void {
     // Cargar canciones
@@ -63,6 +69,9 @@ export class AppComponent implements OnInit, OnDestroy {
 
     // Cargar artistas
     this.cargarArtistas();
+
+    // Cargar historial de reproducción
+    this.cargarHistorial();
   }
 
   ngOnDestroy(): void {
@@ -73,8 +82,8 @@ export class AppComponent implements OnInit, OnDestroy {
     let lista = this.canciones;
 
     if (this.artistaSeleccionado) {
-      lista = this.canciones.filter(c => 
-        c.artista?.id === this.artistaSeleccionado?.id || 
+      lista = this.canciones.filter(c =>
+        c.artista?.id === this.artistaSeleccionado?.id ||
         c.artista?.nombre === this.artistaSeleccionado?.nombre
       );
     } else if (this.playlistSeleccionada) {
@@ -83,17 +92,44 @@ export class AppComponent implements OnInit, OnDestroy {
 
     return lista.filter(cancion => {
       const coincideTexto = cancion.titulo.toLowerCase().includes(this.filtroTexto.toLowerCase()) ||
-                            cancion.artista?.nombre.toLowerCase().includes(this.filtroTexto.toLowerCase());
-      
+        cancion.artista?.nombre?.toLowerCase().includes(this.filtroTexto.toLowerCase());
+
       const coincideFavorita = this.soloFavoritas ? cancion.favorito === true : true;
 
       return coincideTexto && coincideFavorita;
     });
   }
 
+  // Cargar historial desde el backend ordenado cronológicamente
+  cargarHistorial(): void {
+    this.historialService.obtenerHistorial().subscribe({
+      next: (data) => {
+        this.historial = (data || []).sort((a, b) => {
+          const tiempoA = new Date(a.fechaReproduccion).getTime();
+          const tiempoB = new Date(b.fechaReproduccion).getTime();
+          return tiempoB - tiempoA;
+        });
+        this.cdr.detectChanges();
+      },
+      error: (err) => {
+        console.error('Error al cargar historial desde el backend:', err);
+      }
+    });
+  }
+
+  mostrarHistorial(): void {
+    this.viendoHistorial = true;
+    this.artistaSeleccionado = null;
+    this.playlistSeleccionada = null;
+    this.soloFavoritas = false;
+    this.cargarHistorial();
+    this.cdr.detectChanges();
+  }
+
   toggleFiltroFavoritas(): void {
     this.soloFavoritas = !this.soloFavoritas;
     this.playlistSeleccionada = null;
+    this.viendoHistorial = false;
     this.cdr.detectChanges();
   }
 
@@ -128,6 +164,7 @@ export class AppComponent implements OnInit, OnDestroy {
   seleccionarPlaylist(playlist: any): void {
     this.playlistSeleccionada = playlist;
     this.soloFavoritas = false;
+    this.viendoHistorial = false;
     this.cdr.detectChanges();
   }
 
@@ -135,23 +172,25 @@ export class AppComponent implements OnInit, OnDestroy {
     this.artistaSeleccionado = artista;
     this.playlistSeleccionada = null;
     this.soloFavoritas = false;
+    this.viendoHistorial = false;
     this.cdr.detectChanges();
   }
 
   onVolumeChange(event: any): void {
     const volumeValue = event.target.value;
     console.log('Nivel de volumen actual:', volumeValue);
-    
+
     const audioElement = document.querySelector('audio');
     if (audioElement) {
       audioElement.volume = volumeValue;
     }
   }
 
- verTodasLasCanciones(): void {
+  verTodasLasCanciones(): void {
     this.playlistSeleccionada = null;
     this.soloFavoritas = false;
     this.artistaSeleccionado = null;
+    this.viendoHistorial = false;
     this.cdr.detectChanges();
   }
 
@@ -195,12 +234,22 @@ export class AppComponent implements OnInit, OnDestroy {
   }
 
   reproducirCancion(cancion: any): void {
+    if (!cancion) return;
+
     if (this.cancionActual?.id === cancion.id) {
       this.reproduciendo = !this.reproduciendo;
     } else {
       this.cancionActual = cancion;
       this.reproduciendo = true;
       this.tiempoActual = 0;
+
+      // Registrar reproducción en el backend (US)
+      if (cancion.id) {
+        this.historialService.registrarReproduccion(cancion.id).subscribe({
+          next: () => this.cargarHistorial(),
+          error: (err) => console.error('Error al registrar reproducción en historial:', err)
+        });
+      }
     }
     this.gestionarReproduccion();
     this.cdr.detectChanges();
@@ -242,7 +291,6 @@ export class AppComponent implements OnInit, OnDestroy {
   irArtistaDesdeReproductor(cancion: any): void {
     if (!cancion || !cancion.artista) return;
 
-    // Buscar el artista completo en la lista general para tener su portada y datos
     const artistaEncontrado = this.artistas.find(
       a => a.id === cancion.artista.id || a.nombre === cancion.artista.nombre
     );
@@ -250,7 +298,6 @@ export class AppComponent implements OnInit, OnDestroy {
     if (artistaEncontrado) {
       this.seleccionarArtista(artistaEncontrado);
     } else {
-      // Fallback si el artista no está en la lista principal
       this.seleccionarArtista({
         id: cancion.artista.id || 0,
         nombre: cancion.artista.nombre,
