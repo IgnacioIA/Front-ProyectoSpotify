@@ -1,69 +1,145 @@
 <div style="background-color: #121212; color: white; min-height: 100vh; padding: 40px 40px 120px 40px; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;">
-  <header style="margin-bottom: 30px; border-bottom: 1px solid #282828; padding-bottom: 20px; display: flex; justify-content: space-between; align-items: center;">
-    <div>
-      <h1 style="color: #1DB954; font-size: 2.5rem; margin: 0;">🎧 Mi Spotify MVP</h1>
-      <p style="color: #b3b3b3; margin-top: 8px;">Conectado exitosamente</p>
+  
+  <!-- Encabezado y Buscador -->
+  <header style="margin-bottom: 40px;">
+    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+      <h1 style="font-size: 2rem; color: #1DB954; display: flex; align-items: center; gap: 10px;">
+        🎧 Mi Spotify MVP
+      </h1>
+      <div style="display: flex; gap: 15px; align-items: center;">
+        <button (click)="abrirModalPlaylist()" style="background: #282828; color: white; border: none; padding: 10px 20px; border-radius: 20px; font-weight: bold; cursor: pointer;">
+          + Crear Playlist
+        </button>
+        <button (click)="toggleFiltroFavoritas()" [style.background]="soloFavoritas ? '#1DB954' : '#282828'" [style.color]="soloFavoritas ? 'black' : 'white'" style="border: none; padding: 10px 20px; border-radius: 20px; font-weight: bold; cursor: pointer;">
+          💚 Favoritas
+        </button>
+        <input type="text" [(ngModel)]="filtroTexto" placeholder="Buscar canción o artista..." style="background: #242424; border: none; padding: 10px 20px; border-radius: 20px; color: white; width: 250px;">
+      </div>
     </div>
-    
-    <div style="display: flex; gap: 12px; align-items: center;">
-      <button (click)="abrirModalPlaylist()" 
-              style="background: #242424; color: white; border: none; padding: 10px 16px; border-radius: 20px; cursor: pointer; font-size: 0.9rem; font-weight: bold;">
-        ➕ Crear Playlist
-      </button>
-
-      <button (click)="toggleFiltroFavoritas()" 
-              [style.background]="soloFavoritas ? '#1DB954' : '#242424'"
-              [style.color]="soloFavoritas ? 'black' : 'white'"
-              style="border: none; padding: 10px 16px; border-radius: 20px; cursor: pointer; font-size: 0.9rem; font-weight: bold;">
-        💚 Favoritas
-      </button>
-
-      <input type="text" 
-             [(ngModel)]="filtroTexto" 
-             placeholder="Buscar canción o artista..." 
-             style="padding: 10px 16px; border-radius: 20px; border: none; background: #242424; color: white; width: 220px; outline: none; font-size: 0.9rem;">
-    </div>
+    <div style="font-size: 0.9rem; color: #b3b3b3;">Conectado exitosamente</div>
   </header>
 
-  <!-- SECCIÓN DE PLAYLISTS CREADAS -->
-  <div style="margin-bottom: 30px;" *ngIf="playlists.length > 0">
-    <h3 style="font-size: 1.1rem; color: #b3b3b3; margin-bottom: 12px;">Tus Playlists</h3>
+  <!-- Sección de Playlists -->
+  <section style="margin-bottom: 30px;" *ngIf="playlists.length > 0">
+    <h3 style="font-size: 1.1rem; margin-bottom: 10px; color: #b3b3b3;">Tus Playlists</h3>
     <div style="display: flex; gap: 10px; flex-wrap: wrap;">
-      <button (click)="verTodasLasCanciones()"
-              [style.background]="!playlistSeleccionada && !soloFavoritas ? '#1DB954' : '#181818'"
-              [style.color]="!playlistSeleccionada && !soloFavoritas ? 'black' : 'white'"
-              style="border: none; padding: 8px 16px; border-radius: 8px; cursor: pointer; font-weight: bold;">
+      <button (click)="verTodasLasCanciones()" [style.background]="!playlistSeleccionada && !soloFavoritas ? '#1DB954' : '#282828'" [style.color]="!playlistSeleccionada && !soloFavoritas ? 'black' : 'white'" style="border: none; padding: 8px 16px; border-radius: 16px; cursor: pointer; font-weight: bold;">
         🎵 Todas
       </button>
-      <button *ngFor="let pl of playlists" 
-              (click)="seleccionarPlaylist(pl)"
-              [style.background]="playlistSeleccionada?.id === pl.id ? '#1DB954' : '#181818'"
-              [style.color]="playlistSeleccionada?.id === pl.id ? 'black' : 'white'"
-              style="border: none; padding: 8px 16px; border-radius: 8px; cursor: pointer; font-weight: bold;">
-        📁 {{ pl.nombre }} ({{ pl.canciones.length }})
+      <button *ngFor="let pl of playlists" (click)="seleccionarPlaylist(pl)" [style.background]="playlistSeleccionada?.id === pl.id ? '#1DB954' : '#282828'" [style.color]="playlistSeleccionada?.id === pl.id ? 'black' : 'white'" style="border: none; padding: 8px 16px; border-radius: 16px; cursor: pointer; font-weight: bold;">
+        📁 {{ pl.nombre }} ({{ pl.canciones?.length || 0 }})
       </button>
     </div>
-  </div>
+  </section>
 
+  <!-- Lista de Canciones -->
   <section>
-    <h2 style="font-size: 1.5rem; margin-bottom: 20px;">
+    <h2 style="font-size: 1.4rem; margin-bottom: 20px;">
       {{ playlistSeleccionada ? 'Playlist: ' + playlistSeleccionada.nombre : (soloFavoritas ? 'Tus Canciones Favoritas' : 'Canciones Disponibles') }}
     </h2>
 
-    <div style="display: flex; flex-direction: column; gap: 12px; max-width: 800px;">
-      <div *ngFor="let cancion of cancionesFiltradas" 
-           style="display: flex; align-items: center; justify-content: space-between; background: #181818; padding: 12px 20px; border-radius: 8px; position: relative;">
+    <!-- Contenedor con Scroll (máximo ~8 canciones visibles) -->
+    <div style="display: flex; flex-direction: column; gap: 12px; max-width: 900px; max-height: 600px; overflow-y: auto; padding-right: 10px;">
+      
+      <div *ngFor="let cancion of cancionesFiltradas" style="display: flex; align-items: center; gap: 20px; background: #181818; padding: 12px 20px; border-radius: 8px; position: relative;">
         
-        <div style="display: flex; align-items: center; gap: 16px;">
-          <button (click)="reproducirCancion(cancion)" 
-                  style="background: #1DB954; border: none; border-radius: 50%; width: 40px; height: 40px; color: black; font-size: 16px; cursor: pointer; display: flex; align-items: center; justify-content: center;">
-            {{ cancionActual?.id === cancion.id && reproduciendo ? '⏸' : '▶' }}
+        <!-- Botón Play individual -->
+        <button (click)="reproducirCancion(cancion)" style="background: #1DB954; border: none; border-radius: 50%; width: 36px; height: 36px; cursor: pointer; display: flex; align-items: center; justify-content: center; color: black; font-size: 14px;">
+          {{ cancionActual?.id === cancion.id && reproduciendo ? '❚❚' : '▶' }}
+        </button>
+
+        <!-- Título y Artista -->
+        <div style="flex-grow: 1;">
+          <div style="font-weight: bold; color: white; font-size: 1rem;">{{ cancion.titulo }}</div>
+          <div style="color: #b3b3b3; font-size: 0.85rem;">{{ cancion.artista?.nombre }}</div>
+        </div>
+
+        <!-- Género -->
+        <span style="background: #333; padding: 4px 10px; border-radius: 12px; font-size: 0.8rem; color: #b3b3b3;">{{ cancion.genero || 'Rock' }}</span>
+
+        <!-- Duración -->
+        <span style="color: #b3b3b3; font-size: 0.9rem; min-width: 45px; text-align: right;">{{ formatearDuracion(cancion.duracion) }}</span>
+
+        <!-- Botón para añadir a Playlist -->
+        <div style="position: relative;">
+          <button (click)="toggleMenuAgregarPlaylist(cancion, $event)" style="background: #282828; color: white; border: none; padding: 6px 12px; border-radius: 12px; font-size: 0.8rem; cursor: pointer;">
+            + Playlist
           </button>
-          <div>
-            <div style="font-weight: bold; font-size: 1.1rem; color: #fff;">{{ cancion.titulo }}</div>
-            <div style="color: #b3b3b3; font-size: 0.9rem; margin-top: 4px;">{{ cancion.artista?.nombre }}</div>
+
+          <!-- Menú Flotante de Selección de Playlist -->
+          <div *ngIf="cancionParaPlaylist?.id === cancion.id" style="position: absolute; right: 0; bottom: 35px; background: #282828; border: 1px solid #333; border-radius: 8px; padding: 8px; min-width: 160px; z-index: 10;">
+            <div style="font-size: 0.75rem; color: #b3b3b3; margin-bottom: 6px;">Agregar a:</div>
+            <div *ngFor="let pl of playlists" (click)="agregarAPlaylist(cancion, pl, $event)" style="padding: 6px 8px; border-radius: 4px; cursor: pointer; color: white; font-size: 0.85rem;" onmouseover="this.style.background='#3e3e3e'" onmouseout="this.style.background='transparent'">
+              {{ pl.nombre }}
+            </div>
           </div>
         </div>
 
+        <!-- Botón Favorito -->
+        <button (click)="toggleFavorito(cancion, $event)" [style.color]="cancion.favorito ? '#1DB954' : '#b3b3b3'" style="background: transparent; border: none; font-size: 1.2rem; cursor: pointer;">
+          {{ cancion.favorito ? '💚' : '🤍' }}
+        </button>
+
+      </div>
+
+      <div *ngIf="cancionesFiltradas.length === 0" style="color: #b3b3b3; text-align: center; padding: 30px;">
+        No hay canciones en esta vista.
+      </div>
+
+    </div>
+  </section>
+
+</div>
+
+<!-- MODAL CREAR PLAYLIST -->
+<div *ngIf="mostrarModalCrearPlaylist" style="position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.7); display: flex; align-items: center; justify-content: center; z-index: 2000;">
+  <div style="background: #181818; padding: 30px; border-radius: 12px; width: 350px; color: white; box-shadow: 0 4px 20px rgba(0,0,0,0.5);">
+    <h3 style="margin-top: 0; margin-bottom: 20px; font-size: 1.3rem;">Crear nueva playlist</h3>
+    <input type="text" [(ngModel)]="nombreNuevaPlaylist" placeholder="Nombre de la playlist..." style="width: 100%; padding: 10px; border-radius: 6px; border: none; background: #242424; color: white; margin-bottom: 20px; box-sizing: border-box;">
+    <div style="display: flex; justify-content: flex-end; gap: 10px;">
+      <button (click)="cerrarModalPlaylist()" style="background: transparent; color: white; border: none; padding: 8px 16px; cursor: pointer; font-weight: bold;">Cancelar</button>
+      <button (click)="crearPlaylist()" style="background: #1DB954; color: black; border: none; padding: 8px 16px; border-radius: 20px; cursor: pointer; font-weight: bold;">Guardar</button>
+    </div>
+  </div>
+</div>
+
+<!-- BARRA REPRODUCTORA INFERIOR -->
+<div *ngIf="cancionActual" style="position: fixed; bottom: 0; left: 0; right: 0; background: #181818; border-top: 1px solid #282828; padding: 16px 40px; display: flex; align-items: center; justify-content: space-between; z-index: 1000;">
+  
+  <!-- Info de la canción actual + Favorito (Izquierda) -->
+  <div style="display: flex; align-items: center; gap: 16px; width: 35%;">
+    <div style="font-size: 1.8rem;">🎵</div>
+    <div>
+      <div style="font-weight: bold; color: white; font-size: 1rem;">{{ cancionActual.titulo }}</div>
+      <div style="color: #b3b3b3; font-size: 0.85rem;">{{ cancionActual.artista?.nombre }}</div>
+    </div>
+    
+    <!-- Botón favorito -->
+    <button (click)="toggleFavorito(cancionActual, $event)" [style.color]="cancionActual.favorito ? '#1DB954' : '#b3b3b3'" style="background: transparent; border: none; font-size: 1.2rem; cursor: pointer;">
+      {{ cancionActual.favorito ? '💚' : '🤍' }}
+    </button>
+  </div>
+
+  <!-- Controles centrales (Play/Pause y Barra de Progreso) -->
+  <div style="display: flex; flex-direction: column; align-items: center; gap: 8px; width: 40%;">
+    <button (click)="alternarReproduccion()" style="background: #1DB954; border: none; border-radius: 50%; width: 38px; height: 38px; color: black; font-size: 16px; cursor: pointer; display: flex; align-items: center; justify-content: center;">
+      {{ reproduciendo ? '❚❚' : '▶' }}
+    </button>
+    <div style="display: flex; align-items: center; gap: 10px; width: 100%; font-size: 0.75rem; color: #b3b3b3;">
+      <span>{{ formatearDuracion(tiempoActual) }}</span>
+      <div style="flex-grow: 1; background: #4d4d4d; height: 4px; border-radius: 2px; position: relative; overflow: hidden;">
+        <div [style.width.%]="(tiempoActual / cancionActual.duracion) * 100" style="background: #1DB954; height: 100%; transition: width 0.3s linear;"></div>
+      </div>
+      <span>{{ formatearDuracion(cancionActual.duracion) }}</span>
+    </div>
+  </div>
+
+  <!-- Control de Volumen (a la derecha) -->
+  <div style="display: flex; align-items: center; justify-content: center; gap: 8px; width: 25%;">
+    <span style="color: #b3b3b3; font-size: 0.9rem;">🔊</span>
+    <input type="range" min="0" max="1" step="0.01" value="1" (input)="onVolumeChange($event)" style="width: 90px; accent-color: #1DB954; cursor: pointer;">
+  </div>
+
+</div>
+
 <router-outlet />
-<app-player-bar></app-player-bar>

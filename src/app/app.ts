@@ -115,6 +115,16 @@ export class AppComponent implements OnInit, OnDestroy {
     this.cdr.detectChanges();
   }
 
+  onVolumeChange(event: any): void {
+    const volumeValue = event.target.value;
+    console.log('Nivel de volumen actual:', volumeValue);
+    
+    const audioElement = document.querySelector('audio');
+    if (audioElement) {
+      audioElement.volume = volumeValue;
+    }
+  }
+
   verTodasLasCanciones(): void {
     this.playlistSeleccionada = null;
     this.soloFavoritas = false;
