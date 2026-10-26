@@ -4,6 +4,8 @@ import { RouterOutlet } from '@angular/router';
 import { HttpClient } from '@angular/common/http';
 import { FormsModule } from '@angular/forms';
 import { PlayerBarComponent } from './layout/player-bar/player-bar.component';
+import { ArtistaService } from './artista.service';
+import { Artista } from './artista.model';
 
 @Component({
   selector: 'app-root',
@@ -29,10 +31,16 @@ export class AppComponent implements OnInit, OnDestroy {
   tiempoActual: number = 0;
   private intervalo: any = null;
 
+  // Propiedades para artistas
+  artistas: Artista[] = [];
+  soloArtistasFavoritos: boolean = false;
+  artistaSeleccionado: Artista | null = null;
+
   private apiUrl = 'http://localhost:8080/api/canciones';
 
   constructor(
     private http: HttpClient,
+    private artistaService: ArtistaService,
     private cdr: ChangeDetectorRef
   ) {}
 
@@ -52,6 +60,9 @@ export class AppComponent implements OnInit, OnDestroy {
         this.cdr.detectChanges();
       }
     });
+
+    // Cargar artistas
+    this.cargarArtistas();
   }
 
   ngOnDestroy(): void {
@@ -61,7 +72,12 @@ export class AppComponent implements OnInit, OnDestroy {
   get cancionesFiltradas() {
     let lista = this.canciones;
 
-    if (this.playlistSeleccionada) {
+    if (this.artistaSeleccionado) {
+      lista = this.canciones.filter(c => 
+        c.artista?.id === this.artistaSeleccionado?.id || 
+        c.artista?.nombre === this.artistaSeleccionado?.nombre
+      );
+    } else if (this.playlistSeleccionada) {
       lista = this.playlistSeleccionada.canciones || [];
     }
 
@@ -115,6 +131,13 @@ export class AppComponent implements OnInit, OnDestroy {
     this.cdr.detectChanges();
   }
 
+  seleccionarArtista(artista: Artista): void {
+    this.artistaSeleccionado = artista;
+    this.playlistSeleccionada = null;
+    this.soloFavoritas = false;
+    this.cdr.detectChanges();
+  }
+
   onVolumeChange(event: any): void {
     const volumeValue = event.target.value;
     console.log('Nivel de volumen actual:', volumeValue);
@@ -125,9 +148,10 @@ export class AppComponent implements OnInit, OnDestroy {
     }
   }
 
-  verTodasLasCanciones(): void {
+ verTodasLasCanciones(): void {
     this.playlistSeleccionada = null;
     this.soloFavoritas = false;
+    this.artistaSeleccionado = null;
     this.cdr.detectChanges();
   }
 
@@ -195,6 +219,58 @@ export class AppComponent implements OnInit, OnDestroy {
     this.http.patch<any>(`http://localhost:8080/api/canciones/${cancion.id}/favorito`, {}).subscribe({
       next: (cancionActualizada) => {
         cancion.favorito = cancionActualizada.favorito;
+        this.cdr.detectChanges();
+      }
+    });
+  }
+
+  // Métodos para Artistas (US6)
+  cargarArtistas(): void {
+    if (this.soloArtistasFavoritos) {
+      this.artistaService.obtenerArtistasFavoritos().subscribe(data => {
+        this.artistas = data;
+        this.cdr.detectChanges();
+      });
+    } else {
+      this.artistaService.obtenerArtistas().subscribe(data => {
+        this.artistas = data;
+        this.cdr.detectChanges();
+      });
+    }
+  }
+
+  irArtistaDesdeReproductor(cancion: any): void {
+    if (!cancion || !cancion.artista) return;
+
+    // Buscar el artista completo en la lista general para tener su portada y datos
+    const artistaEncontrado = this.artistas.find(
+      a => a.id === cancion.artista.id || a.nombre === cancion.artista.nombre
+    );
+
+    if (artistaEncontrado) {
+      this.seleccionarArtista(artistaEncontrado);
+    } else {
+      // Fallback si el artista no está en la lista principal
+      this.seleccionarArtista({
+        id: cancion.artista.id || 0,
+        nombre: cancion.artista.nombre,
+        portada: cancion.portada || ''
+      });
+    }
+  }
+
+  toggleFiltroArtistasFavoritos(): void {
+    this.soloArtistasFavoritos = !this.soloArtistasFavoritos;
+    this.cargarArtistas();
+  }
+
+  toggleFavoritoArtista(artista: Artista, event: Event): void {
+    event.stopPropagation();
+    this.artistaService.toggleFavorito(artista.id).subscribe(artistaActualizado => {
+      artista.favorito = artistaActualizado.favorito;
+      if (this.soloArtistasFavoritos) {
+        this.cargarArtistas();
+      } else {
         this.cdr.detectChanges();
       }
     });
