@@ -1,4 +1,4 @@
-import { Component, OnInit, OnDestroy, ChangeDetectorRef } from '@angular/core';
+import { Component, OnInit, OnDestroy, ChangeDetectorRef, HostListener } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { RouterOutlet } from '@angular/router';
 import { HttpClient } from '@angular/common/http';
@@ -167,6 +167,19 @@ export class AppComponent implements OnInit, OnDestroy {
     this.playlistSeleccionada = playlist;
     this.soloFavoritas = false;
     this.viendoHistorial = false;
+    this.http.get<any>(`http://localhost:8080/api/playlists/${playlist.id}`).subscribe({
+      next: (plActualizada) => {
+        this.playlistSeleccionada = plActualizada;
+        const index = this.playlists.findIndex(p => p.id === playlist.id);
+        if (index !== -1) {
+          this.playlists[index] = plActualizada;
+        }
+        this.cdr.detectChanges();
+      },
+      error: () => {
+        this.cdr.detectChanges();
+      }
+    });
     this.cdr.detectChanges();
   }
 
@@ -188,6 +201,38 @@ export class AppComponent implements OnInit, OnDestroy {
       },
       error: (err) => {
         console.error('Error al eliminar la playlist:', err);
+      }
+    });
+  }
+
+  // Eliminar canción de la playlist (US 13)
+  eliminarCancionDePlaylist(cancion: any, playlist: any, event: Event): void {
+    event.stopPropagation();
+    if (!cancion || !cancion.id || !playlist || !playlist.id) return;
+
+    this.http.delete<any>(`http://localhost:8080/api/playlists/${playlist.id}/canciones/${cancion.id}`).subscribe({
+      next: (playlistActualizada) => {
+        if (playlistActualizada && playlistActualizada.canciones) {
+          if (this.playlistSeleccionada?.id === playlist.id) {
+            this.playlistSeleccionada = playlistActualizada;
+          }
+          const index = this.playlists.findIndex(p => p.id === playlist.id);
+          if (index !== -1) {
+            this.playlists[index] = playlistActualizada;
+          }
+        } else {
+          if (this.playlistSeleccionada?.id === playlist.id && this.playlistSeleccionada.canciones) {
+            this.playlistSeleccionada.canciones = this.playlistSeleccionada.canciones.filter((c: any) => c.id !== cancion.id);
+          }
+          const pl = this.playlists.find(p => p.id === playlist.id);
+          if (pl && pl.canciones) {
+            pl.canciones = pl.canciones.filter((c: any) => c.id !== cancion.id);
+          }
+        }
+        this.cdr.detectChanges();
+      },
+      error: (err) => {
+        console.error('Error al eliminar la canción de la playlist:', err);
       }
     });
   }
@@ -216,6 +261,14 @@ export class AppComponent implements OnInit, OnDestroy {
     this.artistaSeleccionado = null;
     this.viendoHistorial = false;
     this.cdr.detectChanges();
+  }
+
+  @HostListener('document:click')
+  cerrarMenus(): void {
+    if (this.cancionParaPlaylist) {
+      this.cancionParaPlaylist = null;
+      this.cdr.detectChanges();
+    }
   }
 
   toggleMenuAgregarPlaylist(cancion: any, event: Event): void {
