@@ -341,14 +341,36 @@ export class AppComponent implements OnInit, OnDestroy {
     this.cargarArtistas();
   }
 
+  // Alternar favorito y eliminar artista de favoritos (US 11)
   toggleFavoritoArtista(artista: Artista, event: Event): void {
     event.stopPropagation();
-    this.artistaService.toggleFavorito(artista.id).subscribe(artistaActualizado => {
-      artista.favorito = artistaActualizado.favorito;
-      if (this.soloArtistasFavoritos) {
-        this.cargarArtistas();
-      } else {
+    if (!artista || !artista.id) return;
+
+    this.artistaService.toggleFavorito(artista.id).subscribe({
+      next: (artistaActualizado) => {
+        // Le quita o pone el color al corazón
+        artista.favorito = artistaActualizado.favorito;
+
+        // Sincronizar en la lista de artistas
+        const artistaEnLista = this.artistas.find(a => a.id === artista.id);
+        if (artistaEnLista) {
+          artistaEnLista.favorito = artistaActualizado.favorito;
+        }
+
+        // Sincronizar en artistaSeleccionado si está abierto su perfil
+        if (this.artistaSeleccionado && this.artistaSeleccionado.id === artista.id) {
+          this.artistaSeleccionado.favorito = artistaActualizado.favorito;
+        }
+
+        // Si estamos viendo la lista de artistas favoritos, el artista desaparece de la lista
+        if (this.soloArtistasFavoritos) {
+          this.artistas = this.artistas.filter(a => a.id !== artista.id);
+        }
+
         this.cdr.detectChanges();
+      },
+      error: (err) => {
+        console.error('Error al actualizar favorito de artista:', err);
       }
     });
   }
