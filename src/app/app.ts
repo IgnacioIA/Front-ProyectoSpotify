@@ -7,6 +7,7 @@ import { ArtistaService } from './artista.service';
 import { Artista } from './artista.model';
 import { HistorialService } from './historial.service';
 import { Historial } from './historial.model';
+import { CancionService } from './cancion.service';
 
 @Component({
   selector: 'app-root',
@@ -45,14 +46,15 @@ export class AppComponent implements OnInit, OnDestroy {
 
   constructor(
     private http: HttpClient,
+    private cancionService: CancionService,
     private artistaService: ArtistaService,
     private historialService: HistorialService,
     private cdr: ChangeDetectorRef
   ) { }
 
   ngOnInit(): void {
-    // Cargar canciones
-    this.http.get<any[]>(this.apiUrl).subscribe({
+    // Cargar canciones desde el backend
+    this.cancionService.obtenerCanciones().subscribe({
       next: (data) => {
         this.canciones = data;
         this.cdr.detectChanges();
@@ -243,7 +245,7 @@ export class AppComponent implements OnInit, OnDestroy {
       this.reproduciendo = true;
       this.tiempoActual = 0;
 
-      // Registrar reproducción en el backend (US)
+      // Registrar reproducción en el backend (US 9)
       if (cancion.id) {
         this.historialService.registrarReproduccion(cancion.id).subscribe({
           next: () => this.cargarHistorial(),
@@ -263,12 +265,40 @@ export class AppComponent implements OnInit, OnDestroy {
     }
   }
 
+  // Alternar favorito y eliminar de favoritos (US 10)
   toggleFavorito(cancion: any, event: Event): void {
     event.stopPropagation();
-    this.http.patch<any>(`http://localhost:8080/api/canciones/${cancion.id}/favorito`, {}).subscribe({
+    if (!cancion || !cancion.id) return;
+
+    this.cancionService.toggleFavorito(cancion.id).subscribe({
       next: (cancionActualizada) => {
+        // Actualizar estado del favorito (le quita o pone color al corazón)
         cancion.favorito = cancionActualizada.favorito;
+
+        // Sincronizar en la lista general de canciones (si soloFavoritas está activo, la canción desaparece de inmediato de la lista)
+        const cancionEnLista = this.canciones.find(c => c.id === cancion.id);
+        if (cancionEnLista) {
+          cancionEnLista.favorito = cancionActualizada.favorito;
+        }
+
+        // Sincronizar en cancionActual si está en la barra reproductora inferior
+        if (this.cancionActual && this.cancionActual.id === cancion.id) {
+          this.cancionActual.favorito = cancionActualizada.favorito;
+        }
+
+        // Sincronizar en historial si existe
+        if (this.historial) {
+          this.historial.forEach(h => {
+            if (h.cancion && h.cancion.id === cancion.id) {
+              h.cancion.favorito = cancionActualizada.favorito;
+            }
+          });
+        }
+
         this.cdr.detectChanges();
+      },
+      error: (err) => {
+        console.error('Error al actualizar favorito:', err);
       }
     });
   }

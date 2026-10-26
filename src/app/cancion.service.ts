@@ -9,9 +9,14 @@ import { Cancion } from './cancion.model';
 export class CancionService {
   private apiUrl = 'http://localhost:8080/api/canciones';
 
-  constructor(private http: HttpClient) {}
+  constructor(private http: HttpClient) { }
 
   obtenerCanciones(): Observable<Cancion[]> {
     return this.http.get<Cancion[]>(this.apiUrl);
+  }
+
+  // Alternar el estado de favorito de una canción - US10
+  toggleFavorito(id: number): Observable<Cancion> {
+    return this.http.patch<Cancion>(`${this.apiUrl}/${id}/favorito`, {});
   }
 }
