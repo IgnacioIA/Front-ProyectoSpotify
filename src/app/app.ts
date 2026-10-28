@@ -8,6 +8,8 @@ import { Artista } from './artista.model';
 import { HistorialService } from './historial.service';
 import { Historial } from './historial.model';
 import { CancionService } from './cancion.service';
+import { AuthService } from './auth.service';
+import { Usuario } from './usuario.model';
 
 @Component({
   selector: 'app-root',
@@ -42,6 +44,22 @@ export class AppComponent implements OnInit, OnDestroy {
   historial: Historial[] = [];
   viendoHistorial: boolean = false;
 
+  // Autenticación (US Crear Cuenta & US Inicio de sesion)
+  usuarioActual: Usuario | null = null;
+  modoAuth: 'login' | 'registro' = 'login';
+
+  // Formulario login
+  loginIdentificador: string = '';
+  loginContrasenia: string = '';
+  loginError: string = '';
+
+  // Formulario registro
+  registroNombreUsuario: string = '';
+  registroEmail: string = '';
+  registroContrasenia: string = '';
+  registroError: string = '';
+  registroExito: string = '';
+
   private apiUrl = 'http://localhost:8080/api/canciones';
 
   constructor(
@@ -49,31 +67,55 @@ export class AppComponent implements OnInit, OnDestroy {
     private cancionService: CancionService,
     private artistaService: ArtistaService,
     private historialService: HistorialService,
+    private authService: AuthService,
     private cdr: ChangeDetectorRef
   ) { }
 
   ngOnInit(): void {
-    // Cargar canciones desde el backend
+    // Verificar si hay sesión activa guardada
+    const usuarioGuardado = localStorage.getItem('usuario_spotify');
+    if (usuarioGuardado) {
+      try {
+        this.usuarioActual = JSON.parse(usuarioGuardado);
+      } catch (e) {
+        this.usuarioActual = null;
+      }
+    }
+
+    if (this.usuarioActual) {
+      this.cargarDatosUsuario();
+    }
+
+    // Cargar catálogo general de canciones y artistas
+    this.cargarCatalogoGeneral();
+  }
+
+  cargarDatosUsuario(): void {
+    if (!this.usuarioActual) return;
+    this.cargarPlaylists();
+    this.cargarHistorial();
+  }
+
+  cargarPlaylists(): void {
+    const url = this.usuarioActual ? `http://localhost:8080/api/playlists?usuarioId=${this.usuarioActual.id}` : 'http://localhost:8080/api/playlists';
+    this.http.get<any[]>(url).subscribe({
+      next: (data) => {
+        this.playlists = data || [];
+        this.cdr.detectChanges();
+      },
+      error: (err) => console.error('Error al cargar playlists:', err)
+    });
+  }
+
+  cargarCatalogoGeneral(): void {
     this.cancionService.obtenerCanciones().subscribe({
       next: (data) => {
-        this.canciones = data;
+        this.canciones = data || [];
         this.cdr.detectChanges();
       }
     });
 
-    // Cargar playlists del backend
-    this.http.get<any[]>('http://localhost:8080/api/playlists').subscribe({
-      next: (data) => {
-        this.playlists = data;
-        this.cdr.detectChanges();
-      }
-    });
-
-    // Cargar artistas
     this.cargarArtistas();
-
-    // Cargar historial de reproducción
-    this.cargarHistorial();
   }
 
   ngOnDestroy(): void {
@@ -104,7 +146,8 @@ export class AppComponent implements OnInit, OnDestroy {
 
   // Cargar historial desde el backend ordenado cronológicamente
   cargarHistorial(): void {
-    this.historialService.obtenerHistorial().subscribe({
+    const usuarioId = this.usuarioActual ? this.usuarioActual.id : undefined;
+    this.historialService.obtenerHistorial(usuarioId).subscribe({
       next: (data) => {
         this.historial = (data || []).sort((a, b) => {
           const tiempoA = new Date(a.fechaReproduccion).getTime();
@@ -117,6 +160,89 @@ export class AppComponent implements OnInit, OnDestroy {
         console.error('Error al cargar historial desde el backend:', err);
       }
     });
+  }
+
+  // Métodos de Autenticación (US Crear Cuenta & US Inicio de sesion)
+  cambiarModoAuth(modo: 'login' | 'registro'): void {
+    this.modoAuth = modo;
+    this.loginError = '';
+    this.registroError = '';
+    this.registroExito = '';
+    this.cdr.detectChanges();
+  }
+
+  iniciarSesion(): void {
+    this.loginError = '';
+    if (!this.loginIdentificador.trim() || !this.loginContrasenia.trim()) {
+      this.loginError = 'Debe ingresar nombre de usuario o correo y contraseña.';
+      this.cdr.detectChanges();
+      return;
+    }
+
+    this.authService.login(this.loginIdentificador.trim(), this.loginContrasenia.trim()).subscribe({
+      next: (usuario) => {
+        this.usuarioActual = usuario;
+        localStorage.setItem('usuario_spotify', JSON.stringify(usuario));
+        this.loginIdentificador = '';
+        this.loginContrasenia = '';
+        this.cargarDatosUsuario();
+        this.cargarCatalogoGeneral();
+        this.cdr.detectChanges();
+      },
+      error: (err) => {
+        this.loginError = err?.error?.mensaje || 'Usuario, correo o contraseña incorrectos.';
+        this.cdr.detectChanges();
+      }
+    });
+  }
+
+  registrarse(): void {
+    this.registroError = '';
+    this.registroExito = '';
+
+    if (!this.registroNombreUsuario.trim() || !this.registroEmail.trim() || !this.registroContrasenia.trim()) {
+      this.registroError = 'Todos los campos son obligatorios.';
+      this.cdr.detectChanges();
+      return;
+    }
+
+    this.authService.registrar(
+      this.registroNombreUsuario.trim(),
+      this.registroEmail.trim(),
+      this.registroContrasenia.trim()
+    ).subscribe({
+      next: (usuario) => {
+        this.usuarioActual = usuario;
+        localStorage.setItem('usuario_spotify', JSON.stringify(usuario));
+        this.registroNombreUsuario = '';
+        this.registroEmail = '';
+        this.registroContrasenia = '';
+        this.cargarDatosUsuario();
+        this.cargarCatalogoGeneral();
+        this.cdr.detectChanges();
+      },
+      error: (err) => {
+        this.registroError = err?.error?.mensaje || 'Error al crear la cuenta.';
+        this.cdr.detectChanges();
+      }
+    });
+  }
+
+  cerrarSesion(): void {
+    this.usuarioActual = null;
+    localStorage.removeItem('usuario_spotify');
+    this.playlists = [];
+    this.historial = [];
+    this.playlistSeleccionada = null;
+    this.artistaSeleccionado = null;
+    this.viendoHistorial = false;
+    this.modoAuth = 'login';
+    this.loginIdentificador = '';
+    this.loginContrasenia = '';
+    this.loginError = '';
+    this.registroError = '';
+    this.registroExito = '';
+    this.cdr.detectChanges();
   }
 
   mostrarHistorial(): void {
@@ -149,9 +275,14 @@ export class AppComponent implements OnInit, OnDestroy {
   crearPlaylist(): void {
     if (!this.nombreNuevaPlaylist.trim()) return;
 
-    const nuevaPlaylist = { nombre: this.nombreNuevaPlaylist.trim() };
+    const nuevaPlaylist: any = { nombre: this.nombreNuevaPlaylist.trim() };
+    if (this.usuarioActual) {
+      nuevaPlaylist.usuario = { id: this.usuarioActual.id };
+    }
 
-    this.http.post<any>('http://localhost:8080/api/playlists', nuevaPlaylist).subscribe({
+    const url = this.usuarioActual ? `http://localhost:8080/api/playlists?usuarioId=${this.usuarioActual.id}` : 'http://localhost:8080/api/playlists';
+
+    this.http.post<any>(url, nuevaPlaylist).subscribe({
       next: (playlistCreada) => {
         this.playlists.push(playlistCreada);
         this.cerrarModalPlaylist();
@@ -322,7 +453,7 @@ export class AppComponent implements OnInit, OnDestroy {
 
       // Registrar reproducción en el backend (US 9)
       if (cancion.id) {
-        this.historialService.registrarReproduccion(cancion.id).subscribe({
+        this.historialService.registrarReproduccion(cancion.id, this.usuarioActual?.id).subscribe({
           next: () => this.cargarHistorial(),
           error: (err) => console.error('Error al registrar reproducción en historial:', err)
         });

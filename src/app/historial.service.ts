@@ -11,13 +11,15 @@ export class HistorialService {
 
   constructor(private http: HttpClient) {}
 
-  // Obtener todo el historial de reproducciones
-  obtenerHistorial(): Observable<Historial[]> {
-    return this.http.get<Historial[]>(this.apiUrl);
+  // Obtener todo el historial de reproducciones (opcionalmente filtrado por usuario)
+  obtenerHistorial(usuarioId?: number): Observable<Historial[]> {
+    const url = usuarioId ? `${this.apiUrl}?usuarioId=${usuarioId}` : this.apiUrl;
+    return this.http.get<Historial[]>(url);
   }
 
-  // Registrar una nueva reproducción en el backend
-  registrarReproduccion(cancionId: number): Observable<Historial> {
-    return this.http.post<Historial>(`${this.apiUrl}/reproducir/${cancionId}`, {});
+  // Registrar una nueva reproducción en el backend (opcionalmente asociada al usuario)
+  registrarReproduccion(cancionId: number, usuarioId?: number): Observable<Historial> {
+    const url = usuarioId ? `${this.apiUrl}/reproducir/${cancionId}?usuarioId=${usuarioId}` : `${this.apiUrl}/reproducir/${cancionId}`;
+    return this.http.post<Historial>(url, {});
   }
 }

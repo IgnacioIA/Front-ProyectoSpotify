@@ -1,35 +1,177 @@
 <div
-  style="background-color: #121212; color: white; min-height: 100vh; padding: 40px 40px 120px 40px; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;">
+  style="background-color: #121212; color: white; min-height: 100vh; width: 100%; box-sizing: border-box; padding: 40px 40px 120px 40px; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;">
 
-  <!-- Encabezado y Buscador -->
-  <header style="margin-bottom: 40px;">
-    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
-      <h1 (click)="verTodasLasCanciones()"
-        style="font-size: 2rem; color: #1DB954; display: flex; align-items: center; gap: 10px; cursor: pointer;">
-        🎧 Mi Spotify MVP
-      </h1>
-      <div style="display: flex; gap: 15px; align-items: center;">
-        <button (click)="abrirModalPlaylist()"
-          style="background: #282828; color: white; border: none; padding: 10px 20px; border-radius: 20px; font-weight: bold; cursor: pointer;">
-          + Crear Playlist
-        </button>
-        <button (click)="toggleFiltroFavoritas()" [style.background]="soloFavoritas ? '#1DB954' : '#282828'"
-          [style.color]="soloFavoritas ? 'black' : 'white'"
-          style="border: none; padding: 10px 20px; border-radius: 20px; font-weight: bold; cursor: pointer;">
-          💚 Favoritas
-        </button>
-        <!-- Botón Historial de reproducción (US 9) -->
-        <button (click)="mostrarHistorial()" [style.background]="viendoHistorial ? '#1DB954' : '#282828'"
-          [style.color]="viendoHistorial ? 'black' : 'white'"
-          style="border: none; padding: 10px 20px; border-radius: 20px; font-weight: bold; cursor: pointer;">
-          Historial de reproducción
-        </button>
-        <input type="text" [(ngModel)]="filtroTexto" placeholder="Buscar canción o artista..."
-          style="background: #242424; border: none; padding: 10px 20px; border-radius: 20px; color: white; width: 250px;">
+  <!-- ================= PANTALLA DE INICIO DE SESIÓN / REGISTRO ================= -->
+  <div *ngIf="!usuarioActual"
+    style="min-height: 80vh; display: flex; align-items: center; justify-content: center; padding: 20px;">
+    
+    <div style="background: #181818; border: 1px solid #282828; border-radius: 16px; padding: 40px 35px; width: 100%; max-width: 440px; box-shadow: 0 12px 40px rgba(0,0,0,0.6);">
+      
+      <!-- Logo y Título -->
+      <div style="text-align: center; margin-bottom: 28px;">
+        <div style="font-size: 3rem; margin-bottom: 8px;">🎧</div>
+        <h1 style="font-size: 1.8rem; color: #1DB954; margin: 0 0 8px 0; font-weight: 800;">Spotify Web</h1>
+        <p style="color: #b3b3b3; margin: 0; font-size: 0.95rem;">
+          {{ modoAuth === 'login' ? 'Inicia sesión para continuar' : 'Crea tu cuenta gratuita' }}
+        </p>
       </div>
+
+      <!-- FORMULARIO DE INICIO DE SESIÓN (US: Inicio de sesion) -->
+      <form *ngIf="modoAuth === 'login'" (ngSubmit)="iniciarSesion()">
+        <h2 style="font-size: 1.3rem; margin-top: 0; margin-bottom: 20px; text-align: center;">Iniciar sesión</h2>
+
+        <!-- Mensaje de error -->
+        <div *ngIf="loginError"
+          style="background: rgba(255, 77, 77, 0.15); color: #ff6b6b; border: 1px solid #ff4d4d; padding: 12px; border-radius: 8px; font-size: 0.85rem; margin-bottom: 20px; text-align: center;">
+          ⚠️ {{ loginError }}
+        </div>
+
+        <!-- Campo Identificador: Nombre de usuario o correo electrónico -->
+        <div style="margin-bottom: 18px;">
+          <label for="login-identificador" style="display: block; font-size: 0.85rem; font-weight: bold; margin-bottom: 8px; color: #fff;">
+            Nombre de usuario o correo electrónico
+          </label>
+          <input type="text" id="login-identificador" name="loginIdentificador" [(ngModel)]="loginIdentificador"
+            placeholder="Nombre de usuario o correo electrónico"
+            style="width: 100%; padding: 12px 14px; border-radius: 8px; border: 1px solid #444; background: #242424; color: white; font-size: 0.95rem; box-sizing: border-box; outline: none;">
+        </div>
+
+        <!-- Campo Contraseña -->
+        <div style="margin-bottom: 25px;">
+          <label for="login-contrasenia" style="display: block; font-size: 0.85rem; font-weight: bold; margin-bottom: 8px; color: #fff;">
+            Contraseña
+          </label>
+          <input type="password" id="login-contrasenia" name="loginContrasenia" [(ngModel)]="loginContrasenia"
+            placeholder="Contraseña"
+            style="width: 100%; padding: 12px 14px; border-radius: 8px; border: 1px solid #444; background: #242424; color: white; font-size: 0.95rem; box-sizing: border-box; outline: none;">
+        </div>
+
+        <!-- Botón Iniciar sesión -->
+        <button type="submit" id="btn-iniciar-sesion"
+          style="width: 100%; background: #1DB954; color: black; border: none; padding: 14px; border-radius: 25px; font-weight: bold; font-size: 1rem; cursor: pointer; transition: transform 0.2s, background 0.2s;"
+          onmouseover="this.style.background='#1ed760'; this.style.transform='scale(1.02)'"
+          onmouseout="this.style.background='#1DB954'; this.style.transform='scale(1)'">
+          Iniciar sesión
+        </button>
+
+        <!-- Opción de registrarse si no posee cuenta (Criterio US Crear Cuenta) -->
+        <div style="margin-top: 25px; text-align: center; border-top: 1px solid #282828; padding-top: 20px;">
+          <span style="color: #b3b3b3; font-size: 0.9rem;">¿No posees una cuenta registrada?</span>
+          <br>
+          <button type="button" id="link-ir-registro" (click)="cambiarModoAuth('registro')"
+            style="background: transparent; border: none; color: #1DB954; font-weight: bold; cursor: pointer; margin-top: 8px; font-size: 0.95rem; text-decoration: underline;">
+            Registrarse a través de formulario
+          </button>
+        </div>
+      </form>
+
+      <!-- FORMULARIO DE REGISTRO (US: Crear Cuenta) -->
+      <form *ngIf="modoAuth === 'registro'" (ngSubmit)="registrarse()">
+        <h2 style="font-size: 1.3rem; margin-top: 0; margin-bottom: 20px; text-align: center;">Crear Cuenta</h2>
+
+        <!-- Mensajes de alerta -->
+        <div *ngIf="registroError"
+          style="background: rgba(255, 77, 77, 0.15); color: #ff6b6b; border: 1px solid #ff4d4d; padding: 12px; border-radius: 8px; font-size: 0.85rem; margin-bottom: 20px; text-align: center;">
+          ⚠️ {{ registroError }}
+        </div>
+        <div *ngIf="registroExito"
+          style="background: rgba(29, 185, 84, 0.15); color: #1DB954; border: 1px solid #1DB954; padding: 12px; border-radius: 8px; font-size: 0.85rem; margin-bottom: 20px; text-align: center;">
+          ✓ {{ registroExito }}
+        </div>
+
+        <!-- Campo Nombre de usuario -->
+        <div style="margin-bottom: 18px;">
+          <label for="registro-nombre-usuario" style="display: block; font-size: 0.85rem; font-weight: bold; margin-bottom: 8px; color: #fff;">
+            Nombre de usuario
+          </label>
+          <input type="text" id="registro-nombre-usuario" name="registroNombreUsuario" [(ngModel)]="registroNombreUsuario"
+            placeholder="Tu nombre de usuario"
+            style="width: 100%; padding: 12px 14px; border-radius: 8px; border: 1px solid #444; background: #242424; color: white; font-size: 0.95rem; box-sizing: border-box; outline: none;">
+        </div>
+
+        <!-- Campo Correo electrónico -->
+        <div style="margin-bottom: 18px;">
+          <label for="registro-email" style="display: block; font-size: 0.85rem; font-weight: bold; margin-bottom: 8px; color: #fff;">
+            Correo electrónico
+          </label>
+          <input type="email" id="registro-email" name="registroEmail" [(ngModel)]="registroEmail"
+            placeholder="nombre@ejemplo.com"
+            style="width: 100%; padding: 12px 14px; border-radius: 8px; border: 1px solid #444; background: #242424; color: white; font-size: 0.95rem; box-sizing: border-box; outline: none;">
+        </div>
+
+        <!-- Campo Contraseña -->
+        <div style="margin-bottom: 25px;">
+          <label for="registro-contrasenia" style="display: block; font-size: 0.85rem; font-weight: bold; margin-bottom: 8px; color: #fff;">
+            Contraseña
+          </label>
+          <input type="password" id="registro-contrasenia" name="registroContrasenia" [(ngModel)]="registroContrasenia"
+            placeholder="Crea una contraseña"
+            style="width: 100%; padding: 12px 14px; border-radius: 8px; border: 1px solid #444; background: #242424; color: white; font-size: 0.95rem; box-sizing: border-box; outline: none;">
+        </div>
+
+        <!-- Botón Registrarse -->
+        <button type="submit" id="btn-registrarse"
+          style="width: 100%; background: #1DB954; color: black; border: none; padding: 14px; border-radius: 25px; font-weight: bold; font-size: 1rem; cursor: pointer; transition: transform 0.2s, background 0.2s;"
+          onmouseover="this.style.background='#1ed760'; this.style.transform='scale(1.02)'"
+          onmouseout="this.style.background='#1DB954'; this.style.transform='scale(1)'">
+          Crear Cuenta
+        </button>
+
+        <div style="margin-top: 25px; text-align: center; border-top: 1px solid #282828; padding-top: 20px;">
+          <span style="color: #b3b3b3; font-size: 0.9rem;">¿Ya posees una cuenta registrada?</span>
+          <br>
+          <button type="button" id="link-ir-login" (click)="cambiarModoAuth('login')"
+            style="background: transparent; border: none; color: #1DB954; font-weight: bold; cursor: pointer; margin-top: 8px; font-size: 0.95rem; text-decoration: underline;">
+            Iniciar sesión
+          </button>
+        </div>
+      </form>
+
     </div>
-    <div style="font-size: 0.9rem; color: #b3b3b3;">Conectado exitosamente</div>
-  </header>
+  </div>
+
+  <!-- ================= APLICACIÓN PRINCIPAL (USUARIO LOGUEADO) ================= -->
+  <div *ngIf="usuarioActual">
+
+    <!-- Encabezado y Buscador -->
+    <header style="margin-bottom: 40px;">
+      <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; flex-wrap: wrap; gap: 15px;">
+        <h1 (click)="verTodasLasCanciones()"
+          style="font-size: 2rem; color: #1DB954; display: flex; align-items: center; gap: 10px; cursor: pointer; margin: 0;">
+          🎧 Mi Spotify MVP
+        </h1>
+        <div style="display: flex; gap: 15px; align-items: center; flex-wrap: wrap;">
+          <!-- Badge de Usuario y Botón Cerrar Sesión -->
+          <div style="display: flex; align-items: center; gap: 10px; background: #1f1f1f; padding: 6px 14px; border-radius: 20px; border: 1px solid #333;">
+            <span style="font-size: 0.85rem; color: #1DB954; font-weight: bold;">👤 {{ usuarioActual.nombreUsuario }}</span>
+            <button (click)="cerrarSesion()" id="btn-cerrar-sesion"
+              style="background: transparent; border: none; color: #b3b3b3; font-size: 0.8rem; cursor: pointer; font-weight: bold; padding: 2px 6px; border-radius: 8px; transition: color 0.2s;"
+              onmouseover="this.style.color='#ff4d4d'" onmouseout="this.style.color='#b3b3b3'">
+              Cerrar sesión
+            </button>
+          </div>
+
+          <button (click)="abrirModalPlaylist()"
+            style="background: #282828; color: white; border: none; padding: 10px 20px; border-radius: 20px; font-weight: bold; cursor: pointer;">
+            + Crear Playlist
+          </button>
+          <button (click)="toggleFiltroFavoritas()" [style.background]="soloFavoritas ? '#1DB954' : '#282828'"
+            [style.color]="soloFavoritas ? 'black' : 'white'"
+            style="border: none; padding: 10px 20px; border-radius: 20px; font-weight: bold; cursor: pointer;">
+            💚 Favoritas
+          </button>
+          <!-- Botón Historial de reproducción (US 9) -->
+          <button (click)="mostrarHistorial()" [style.background]="viendoHistorial ? '#1DB954' : '#282828'"
+            [style.color]="viendoHistorial ? 'black' : 'white'"
+            style="border: none; padding: 10px 20px; border-radius: 20px; font-weight: bold; cursor: pointer;">
+            Historial de reproducción
+          </button>
+          <input type="text" [(ngModel)]="filtroTexto" placeholder="Buscar canción o artista..."
+            style="background: #242424; border: none; padding: 10px 20px; border-radius: 20px; color: white; width: 220px;">
+        </div>
+      </div>
+      <div style="font-size: 0.9rem; color: #b3b3b3;">Conectado exitosamente como {{ usuarioActual.nombreUsuario }} ({{ usuarioActual.email }})</div>
+    </header>
 
   <!-- ================= VISTA DE DETALLE DE ARTISTA (Se muestra al hacer click en un artista) ================= -->
   <div *ngIf="artistaSeleccionado" style="margin-bottom: 40px;">
@@ -391,9 +533,11 @@
       </div>
     </section>
 
-  </div>
+  </div> <!-- Fin de !artistaSeleccionado && !viendoHistorial -->
 
-</div>
+  </div> <!-- Fin de usuarioActual -->
+
+</div> <!-- Fin del contenedor #121212 -->
 
 
 <!-- MODAL CREAR PLAYLIST -->
@@ -461,6 +605,6 @@
       style="width: 90px; accent-color: #1DB954; cursor: pointer;">
   </div>
 
-</div>
+</div> <!-- Fin de cancionActual -->
 
 <router-outlet />
