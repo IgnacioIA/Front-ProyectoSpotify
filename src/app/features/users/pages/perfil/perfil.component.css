@@ -1,0 +1,25 @@
+.perfil__avatar {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 96px;
+  height: 96px;
+  margin: 0 auto 16px;
+  border-radius: 50%;
+  background: #282828;
+  font-size: 3rem;
+}
+
+.perfil__datos {
+  margin: 0;
+}
+
+.perfil__datos dt {
+  color: #b3b3b3;
+  font-size: 0.85rem;
+}
+
+.perfil__datos dd {
+  margin: 4px 0 16px;
+  overflow-wrap: anywhere;
+}

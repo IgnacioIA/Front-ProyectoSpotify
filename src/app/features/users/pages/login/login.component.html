@@ -1,0 +1,54 @@
+<section class="auth">
+  <h2 class="auth__titulo">Iniciar sesión</h2>
+
+  @if (registrado()) {
+    <p class="auth__aviso auth__aviso--exito" role="status">Tu cuenta fue creada. Ya podés iniciar sesión.</p>
+  }
+  @if (error(); as error) {
+    <p class="auth__aviso auth__aviso--error" role="alert">{{ error }}</p>
+  }
+
+  <form #form="ngForm" (ngSubmit)="iniciarSesion(form)" novalidate>
+    <div class="auth__campo">
+      <label class="auth__etiqueta" for="login-identificador">Usuario o correo electrónico</label>
+      <input
+        id="login-identificador"
+        class="auth__input"
+        name="identificador"
+        type="text"
+        autocomplete="username"
+        required
+        [(ngModel)]="identificador"
+        #identificadorCampo="ngModel"
+        [attr.aria-invalid]="identificadorCampo.invalid && identificadorCampo.touched"
+        aria-describedby="login-identificador-error">
+      @if (identificadorCampo.invalid && identificadorCampo.touched) {
+        <p id="login-identificador-error" class="auth__error-campo">Ingresá tu usuario o correo electrónico.</p>
+      }
+    </div>
+
+    <div class="auth__campo">
+      <label class="auth__etiqueta" for="login-contrasenia">Contraseña</label>
+      <input
+        id="login-contrasenia"
+        class="auth__input"
+        name="contrasenia"
+        type="password"
+        autocomplete="current-password"
+        required
+        [(ngModel)]="contrasenia"
+        #contraseniaCampo="ngModel"
+        [attr.aria-invalid]="contraseniaCampo.invalid && contraseniaCampo.touched"
+        aria-describedby="login-contrasenia-error">
+      @if (contraseniaCampo.invalid && contraseniaCampo.touched) {
+        <p id="login-contrasenia-error" class="auth__error-campo">Ingresá tu contraseña.</p>
+      }
+    </div>
+
+    <button type="submit" class="auth__boton" [disabled]="enviando()">
+      {{ enviando() ? 'Ingresando...' : 'Iniciar sesión' }}
+    </button>
+  </form>
+
+  <p class="auth__pie">¿No tenés cuenta? <a routerLink="/registro">Registrate</a></p>
+</section>

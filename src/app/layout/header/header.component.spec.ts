@@ -1,4 +1,8 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
+import { provideHttpClient } from '@angular/common/http';
+import { HttpTestingController, provideHttpClientTesting } from '@angular/common/http/testing';
+import { provideRouter, Router } from '@angular/router';
+import { AuthService } from '../../features/users/data-access/auth.service';
 import { HeaderComponent } from './header.component';
 
 describe('HeaderComponent', () => {
@@ -8,10 +12,53 @@ describe('HeaderComponent', () => {
   beforeEach(async () => {
     await TestBed.configureTestingModule({
       imports: [HeaderComponent],
+      providers: [provideRouter([]), provideHttpClient(), provideHttpClientTesting()],
     }).compileComponents();
     fixture = TestBed.createComponent(HeaderComponent);
     element = fixture.nativeElement as HTMLElement;
     fixture.detectChanges();
+  });
+
+  function accionesUsuario(): string[] {
+    return Array.from(element.querySelectorAll('.header__usuario a, .header__usuario button')).map(
+      (el) => el.textContent!.replace(/\s+/g, ' ').trim(),
+    );
+  }
+
+  function iniciarSesion(): void {
+    TestBed.inject(AuthService)
+      .iniciarSesion({ identificador: 'ana', contrasenia: 'secreta' })
+      .subscribe();
+    TestBed.inject(HttpTestingController)
+      .expectOne('http://localhost:8080/api/auth/login')
+      .flush({ id: 7, nombreUsuario: 'ana', email: 'ana@test.local', contrasenia: 'secreta' });
+    fixture.detectChanges();
+  }
+
+  it('should show the login and register links when there is no session', () => {
+    expect(accionesUsuario()).toEqual(['Registrarse', 'Iniciar sesión']);
+    const enlaces = element.querySelectorAll('.header__usuario a');
+    expect(enlaces[0].getAttribute('href')).toBe('/registro');
+    expect(enlaces[1].getAttribute('href')).toBe('/login');
+  });
+
+  it('should replace the links with the profile access and logout after logging in', () => {
+    iniciarSesion();
+    expect(accionesUsuario()).toEqual(['👤ana', 'Cerrar sesión']);
+    expect(element.querySelector('.header__nombre')?.textContent).toBe('ana');
+    const perfil = element.querySelector('.header__perfil')!;
+    expect(perfil.getAttribute('href')).toBe('/perfil');
+    expect(perfil.getAttribute('aria-label')).toBe('Perfil de ana');
+  });
+
+  it('should go back to the anonymous actions after logging out', async () => {
+    iniciarSesion();
+    (element.querySelector('.header__usuario button') as HTMLButtonElement).click();
+    await fixture.whenStable();
+    fixture.detectChanges();
+    expect(TestBed.inject(AuthService).estaAutenticado()).toBe(false);
+    expect(TestBed.inject(Router).url).toBe('/');
+    expect(accionesUsuario()).toEqual(['Registrarse', 'Iniciar sesión']);
   });
 
   it('should render the title, the search field and the user area in that order', () => {

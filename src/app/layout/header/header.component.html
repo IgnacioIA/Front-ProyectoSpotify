@@ -37,8 +37,21 @@
       (ngModelChange)="filtroTextoChange.emit($event)">
   </div>
 
-  <!-- Derecha: acceso de usuario.
-       PENDIENTE: el proyecto todavía no tiene mecanismo de autenticación ni rutas de perfil,
-       inicio de sesión o registro en features/users. -->
-  <div class="header__usuario"></div>
+  <!-- Derecha: acceso de usuario según el estado de AuthService -->
+  <div class="header__usuario">
+    @if (authService.usuario(); as usuario) {
+      <a
+        class="header__perfil"
+        routerLink="/perfil"
+        routerLinkActive="header__perfil--activo"
+        [attr.aria-label]="'Perfil de ' + usuario.nombreUsuario">
+        <span class="header__avatar" aria-hidden="true">👤</span>
+        <span class="header__nombre">{{ usuario.nombreUsuario }}</span>
+      </a>
+      <button type="button" class="header__accion" (click)="cerrarSesion()">Cerrar sesión</button>
+    } @else {
+      <a class="header__accion" routerLink="/registro">Registrarse</a>
+      <a class="header__accion header__accion--principal" routerLink="/login">Iniciar sesión</a>
+    }
+  </div>
 </header>

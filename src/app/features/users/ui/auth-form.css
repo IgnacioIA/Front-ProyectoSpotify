@@ -1,0 +1,133 @@
+/* Estilos compartidos por las pantallas de inicio de sesión y registro */
+:host {
+  display: block;
+  min-height: calc(100vh - 64px);
+  padding: 48px 16px 120px;
+  box-sizing: border-box;
+  background-color: #121212;
+  color: #ffffff;
+  font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+}
+
+.auth {
+  max-width: 400px;
+  margin: 0 auto;
+  padding: 32px;
+  border-radius: 12px;
+  background: #181818;
+}
+
+.auth__titulo {
+  margin: 0 0 24px;
+  font-size: 1.6rem;
+  text-align: center;
+}
+
+.auth__campo {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  margin-bottom: 16px;
+}
+
+.auth__etiqueta {
+  font-size: 0.9rem;
+  font-weight: bold;
+}
+
+.auth__input {
+  height: 44px;
+  padding: 0 14px;
+  box-sizing: border-box;
+  border: 2px solid transparent;
+  border-radius: 6px;
+  background: #242424;
+  color: #ffffff;
+  font: inherit;
+}
+
+.auth__input:hover {
+  border-color: #3e3e3e;
+}
+
+.auth__input:focus {
+  outline: none;
+  border-color: #ffffff;
+}
+
+.auth__input[aria-invalid='true'] {
+  border-color: #f15e6c;
+}
+
+.auth__error-campo {
+  margin: 0;
+  color: #f15e6c;
+  font-size: 0.85rem;
+}
+
+.auth__aviso {
+  margin: 0 0 16px;
+  padding: 12px 14px;
+  border-radius: 6px;
+  font-size: 0.9rem;
+}
+
+.auth__aviso--error {
+  background: #3b1519;
+  color: #ffb3ba;
+}
+
+.auth__aviso--exito {
+  background: #12301d;
+  color: #9ff0b8;
+}
+
+.auth__boton {
+  width: 100%;
+  height: 48px;
+  margin-top: 8px;
+  border: none;
+  border-radius: 24px;
+  background: #1DB954;
+  color: #000000;
+  font: inherit;
+  font-weight: bold;
+  cursor: pointer;
+}
+
+.auth__boton:hover:not(:disabled) {
+  background: #1ed760;
+}
+
+.auth__boton:focus-visible {
+  outline: 2px solid #ffffff;
+  outline-offset: 2px;
+}
+
+.auth__boton:disabled {
+  opacity: 0.6;
+  cursor: default;
+}
+
+.auth__pie {
+  margin: 24px 0 0;
+  color: #b3b3b3;
+  font-size: 0.9rem;
+  text-align: center;
+}
+
+.auth__pie a {
+  color: #ffffff;
+  font-weight: bold;
+}
+
+.auth__pie a:focus-visible {
+  outline: 2px solid #ffffff;
+  outline-offset: 2px;
+}
+
+@media (max-width: 480px) {
+  .auth {
+    padding: 24px 16px;
+  }
+}

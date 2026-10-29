@@ -1,0 +1,16 @@
+<section class="auth">
+  @if (authService.usuario(); as usuario) {
+    <div class="perfil__avatar" aria-hidden="true">👤</div>
+    <h2 class="auth__titulo">{{ usuario.nombreUsuario }}</h2>
+    <dl class="perfil__datos">
+      <dt>Nombre de usuario</dt>
+      <dd>{{ usuario.nombreUsuario }}</dd>
+      <dt>Correo electrónico</dt>
+      <dd>{{ usuario.email }}</dd>
+    </dl>
+  } @else {
+    <h2 class="auth__titulo">Perfil</h2>
+    <p class="auth__pie">Iniciá sesión para ver tu perfil.</p>
+    <p class="auth__pie"><a routerLink="/login">Iniciar sesión</a></p>
+  }
+</section>
