@@ -1,0 +1,72 @@
+<section class="auth">
+  <h2 class="auth__titulo">Registrarse</h2>
+
+  @if (error(); as error) {
+    <p class="auth__aviso auth__aviso--error" role="alert">{{ error }}</p>
+  }
+
+  <form #form="ngForm" (ngSubmit)="registrarse(form)" novalidate>
+    <div class="auth__campo">
+      <label class="auth__etiqueta" for="registro-usuario">Nombre de usuario</label>
+      <input
+        id="registro-usuario"
+        class="auth__input"
+        name="nombreUsuario"
+        type="text"
+        autocomplete="username"
+        required
+        [(ngModel)]="nombreUsuario"
+        #usuarioCampo="ngModel"
+        [attr.aria-invalid]="usuarioCampo.invalid && usuarioCampo.touched"
+        aria-describedby="registro-usuario-error">
+      @if (usuarioCampo.invalid && usuarioCampo.touched) {
+        <p id="registro-usuario-error" class="auth__error-campo">Ingresá un nombre de usuario.</p>
+      }
+    </div>
+
+    <div class="auth__campo">
+      <label class="auth__etiqueta" for="registro-email">Correo electrónico</label>
+      <input
+        id="registro-email"
+        class="auth__input"
+        name="email"
+        type="email"
+        autocomplete="email"
+        required
+        email
+        [(ngModel)]="email"
+        #emailCampo="ngModel"
+        [attr.aria-invalid]="emailCampo.invalid && emailCampo.touched"
+        aria-describedby="registro-email-error">
+      @if (emailCampo.invalid && emailCampo.touched) {
+        <p id="registro-email-error" class="auth__error-campo">
+          {{ emailCampo.hasError('required') ? 'Ingresá tu correo electrónico.' : 'Ingresá un correo electrónico válido.' }}
+        </p>
+      }
+    </div>
+
+    <div class="auth__campo">
+      <label class="auth__etiqueta" for="registro-contrasenia">Contraseña</label>
+      <input
+        id="registro-contrasenia"
+        class="auth__input"
+        name="contrasenia"
+        type="password"
+        autocomplete="new-password"
+        required
+        [(ngModel)]="contrasenia"
+        #contraseniaCampo="ngModel"
+        [attr.aria-invalid]="contraseniaCampo.invalid && contraseniaCampo.touched"
+        aria-describedby="registro-contrasenia-error">
+      @if (contraseniaCampo.invalid && contraseniaCampo.touched) {
+        <p id="registro-contrasenia-error" class="auth__error-campo">Ingresá una contraseña.</p>
+      }
+    </div>
+
+    <button type="submit" class="auth__boton" [disabled]="enviando()">
+      {{ enviando() ? 'Creando cuenta...' : 'Registrarse' }}
+    </button>
+  </form>
+
+  <p class="auth__pie">¿Ya tenés cuenta? <a routerLink="/login">Iniciá sesión</a></p>
+</section>

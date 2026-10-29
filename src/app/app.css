@@ -1,0 +1,10 @@
+.app-cuerpo {
+  display: flex;
+  align-items: flex-start;
+  background-color: #121212;
+}
+
+.app-contenido {
+  flex: 1;
+  min-width: 0;
+}
