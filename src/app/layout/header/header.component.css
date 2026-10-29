@@ -1,0 +1,173 @@
+:host {
+  display: block;
+  position: sticky;
+  top: 0;
+  z-index: 900;
+}
+
+.header {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 480px) minmax(0, 1fr);
+  grid-template-areas: 'titulo buscador usuario';
+  align-items: center;
+  gap: 24px;
+  min-height: 64px;
+  padding: 8px 40px;
+  box-sizing: border-box;
+  background-color: #000000;
+  color: #ffffff;
+  font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+}
+
+/* Izquierda: botón del menú y título */
+.header__izquierda {
+  grid-area: titulo;
+  justify-self: start;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-width: 0;
+}
+
+.header__menu {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  width: 40px;
+  height: 40px;
+  padding: 0;
+  border: none;
+  border-radius: 50%;
+  background: transparent;
+  cursor: pointer;
+}
+
+.header__menu svg {
+  width: 22px;
+  height: 22px;
+  fill: none;
+  stroke: #b3b3b3;
+  stroke-width: 2;
+  stroke-linecap: round;
+}
+
+.header__menu:hover {
+  background: #242424;
+}
+
+.header__menu:hover svg,
+.header__menu[aria-expanded='true'] svg {
+  stroke: #ffffff;
+}
+
+.header__menu:focus-visible {
+  outline: 2px solid #ffffff;
+  outline-offset: 2px;
+}
+
+.header__titulo {
+  margin: 0;
+  font-size: 1.5rem;
+  min-width: 0;
+}
+
+.header__titulo-boton {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 4px 8px;
+  margin-left: -8px;
+  border: none;
+  border-radius: 8px;
+  background: transparent;
+  color: #1DB954;
+  font: inherit;
+  font-weight: bold;
+  white-space: nowrap;
+  cursor: pointer;
+}
+
+.header__titulo-boton:hover {
+  color: #1ed760;
+}
+
+.header__titulo-boton:focus-visible {
+  outline: 2px solid #ffffff;
+  outline-offset: 2px;
+}
+
+/* Centro: buscador */
+.header__buscador {
+  grid-area: buscador;
+  position: relative;
+  width: 100%;
+}
+
+.header__lupa {
+  position: absolute;
+  top: 50%;
+  left: 16px;
+  width: 18px;
+  height: 18px;
+  transform: translateY(-50%);
+  fill: none;
+  stroke: #b3b3b3;
+  stroke-width: 2;
+  stroke-linecap: round;
+  pointer-events: none;
+}
+
+.header__input {
+  width: 100%;
+  height: 44px;
+  padding: 0 20px 0 46px;
+  box-sizing: border-box;
+  border: 2px solid transparent;
+  border-radius: 22px;
+  background: #242424;
+  color: #ffffff;
+  font: inherit;
+  font-size: 0.95rem;
+  transition: background-color 0.2s, border-color 0.2s;
+}
+
+.header__input::placeholder {
+  color: #b3b3b3;
+}
+
+.header__input:hover {
+  background: #2a2a2a;
+  border-color: #3e3e3e;
+}
+
+.header__input:focus {
+  outline: none;
+  background: #2a2a2a;
+  border-color: #ffffff;
+}
+
+/* Derecha: acceso de usuario (pendiente de autenticación) */
+.header__usuario {
+  grid-area: usuario;
+  justify-self: end;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+/* Pantallas pequeñas: título y usuario arriba, buscador debajo a todo el ancho */
+@media (max-width: 720px) {
+  .header {
+    grid-template-columns: minmax(0, 1fr) auto;
+    grid-template-areas:
+      'titulo usuario'
+      'buscador buscador';
+    gap: 12px;
+    padding: 12px 16px;
+  }
+
+  .header__titulo {
+    font-size: 1.25rem;
+  }
+}

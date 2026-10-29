@@ -1,0 +1,44 @@
+<header class="header">
+  <!-- Izquierda: botón del menú lateral y título -->
+  <div class="header__izquierda">
+    <button
+      type="button"
+      class="header__menu"
+      aria-controls="menu-lateral"
+      [attr.aria-expanded]="menuAbierto"
+      [attr.aria-label]="menuAbierto ? 'Cerrar menú de navegación' : 'Abrir menú de navegación'"
+      (click)="menuToggle.emit()">
+      <svg viewBox="0 0 24 24" aria-hidden="true">
+        <line x1="4" y1="7" x2="20" y2="7" />
+        <line x1="4" y1="12" x2="20" y2="12" />
+        <line x1="4" y1="17" x2="20" y2="17" />
+      </svg>
+    </button>
+    <h1 class="header__titulo">
+      <button type="button" class="header__titulo-boton" (click)="tituloClick.emit()">
+        🎧 Mi Spotify MVP
+      </button>
+    </h1>
+  </div>
+
+  <!-- Centro: buscador de canciones -->
+  <div class="header__buscador" role="search">
+    <svg class="header__lupa" viewBox="0 0 24 24" aria-hidden="true">
+      <circle cx="11" cy="11" r="7" />
+      <line x1="16.5" y1="16.5" x2="21" y2="21" />
+    </svg>
+    <input
+      type="search"
+      class="header__input"
+      aria-label="Buscar canción o artista"
+      placeholder="Buscar canción o artista..."
+      autocomplete="off"
+      [ngModel]="filtroTexto"
+      (ngModelChange)="filtroTextoChange.emit($event)">
+  </div>
+
+  <!-- Derecha: acceso de usuario.
+       PENDIENTE: el proyecto todavía no tiene mecanismo de autenticación ni rutas de perfil,
+       inicio de sesión o registro en features/users. -->
+  <div class="header__usuario"></div>
+</header>

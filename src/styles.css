@@ -15,3 +15,8 @@
 ::-webkit-scrollbar-thumb:hover {
   background: #535353;
 }
+
+/* Sin margen del navegador para que el header ocupe todo el ancho superior */
+body {
+  margin: 0;
+}

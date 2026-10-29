@@ -1,0 +1,29 @@
+@if (abierto) {
+  <!-- Fondo para cerrar el menú en pantallas pequeñas -->
+  <div class="sidebar__fondo" (click)="cerrar.emit()" aria-hidden="true"></div>
+
+  <nav id="menu-lateral" class="sidebar" aria-label="Navegación principal">
+    <ul class="sidebar__lista">
+      <li>
+        <a
+          class="sidebar__opcion"
+          routerLink="/"
+          routerLinkActive="sidebar__opcion--activa"
+          [routerLinkActiveOptions]="{ exact: true }"
+          ariaCurrentWhenActive="page"
+          (click)="seleccion.emit('inicio')">
+          <span class="sidebar__icono" aria-hidden="true">🏠</span>
+          Inicio
+        </a>
+      </li>
+      @for (opcion of opciones; track opcion.accion) {
+        <li>
+          <button type="button" class="sidebar__opcion" (click)="seleccion.emit(opcion.accion)">
+            <span class="sidebar__icono" aria-hidden="true">{{ opcion.icono }}</span>
+            {{ opcion.texto }}
+          </button>
+        </li>
+      }
+    </ul>
+  </nav>
+}

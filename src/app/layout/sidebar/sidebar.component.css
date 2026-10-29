@@ -1,0 +1,91 @@
+:host {
+  display: contents;
+}
+
+/* Escritorio: columna a la izquierda del contenido, debajo del header */
+.sidebar {
+  position: sticky;
+  top: 64px;
+  flex-shrink: 0;
+  width: 240px;
+  height: calc(100vh - 64px);
+  padding: 16px 12px 120px;
+  box-sizing: border-box;
+  overflow-y: auto;
+  background-color: #000000;
+  font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+}
+
+.sidebar__fondo {
+  display: none;
+}
+
+.sidebar__lista {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.sidebar__opcion {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  width: 100%;
+  padding: 12px 16px;
+  box-sizing: border-box;
+  border: none;
+  border-radius: 8px;
+  background: transparent;
+  color: #b3b3b3;
+  font: inherit;
+  font-size: 0.95rem;
+  font-weight: bold;
+  text-align: left;
+  text-decoration: none;
+  cursor: pointer;
+}
+
+.sidebar__opcion:hover {
+  background: #1a1a1a;
+  color: #ffffff;
+}
+
+.sidebar__opcion:focus-visible {
+  outline: 2px solid #ffffff;
+  outline-offset: -2px;
+}
+
+.sidebar__opcion--activa {
+  background: #242424;
+  color: #1DB954;
+}
+
+.sidebar__icono {
+  width: 22px;
+  text-align: center;
+}
+
+/* Pantallas pequeñas: panel superpuesto con fondo oscurecido */
+@media (max-width: 720px) {
+  .sidebar__fondo {
+    display: block;
+    position: fixed;
+    inset: 0;
+    z-index: 1100;
+    background: rgba(0, 0, 0, 0.6);
+  }
+
+  .sidebar {
+    position: fixed;
+    top: 0;
+    left: 0;
+    z-index: 1101;
+    width: min(280px, 80vw);
+    height: 100vh;
+    padding: 24px 12px;
+    box-shadow: 4px 0 24px rgba(0, 0, 0, 0.5);
+  }
+}
