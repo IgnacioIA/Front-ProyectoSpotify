@@ -1,0 +1,38 @@
+<section class="historial">
+  <h2 class="historial__titulo">Historial de reproducción</h2>
+
+  @if (historial(); as historial) {
+    <ol class="historial__lista">
+      @for (item of historial; track item.id) {
+        <li class="historial__item">
+          <button
+            type="button"
+            class="historial__play"
+            [attr.aria-label]="(estaSonando(item.cancion) ? 'Pausar ' : 'Reproducir ') + item.cancion?.titulo"
+            (click)="reproductor.reproducir(item.cancion)">
+            {{ estaSonando(item.cancion) ? '❚❚' : '▶' }}
+          </button>
+          <div class="historial__datos">
+            <div class="historial__cancion">{{ item.cancion?.titulo }}</div>
+            <div class="historial__artista">{{ item.cancion?.artista?.nombre }}</div>
+          </div>
+          <span class="historial__genero">{{ item.cancion?.genero || 'Rock' }}</span>
+          <time class="historial__fecha" [attr.datetime]="item.fechaReproduccion">
+            {{ item.fechaReproduccion | date: 'dd/MM/yyyy HH:mm' }}
+          </time>
+          <span class="historial__duracion">{{ formatearDuracion(item.cancion?.duracion) }}</span>
+          <button
+            type="button"
+            class="historial__favorito"
+            [class.historial__favorito--activo]="item.cancion?.favorito"
+            [attr.aria-label]="(item.cancion?.favorito ? 'Quitar de favoritos ' : 'Agregar a favoritos ') + item.cancion?.titulo"
+            (click)="toggleFavorito(item.cancion)">
+            {{ item.cancion?.favorito ? '💚' : '🤍' }}
+          </button>
+        </li>
+      } @empty {
+        <li class="historial__vacio">Todavía no reproduciste ninguna canción. Cuando escuches una, va a aparecer acá.</li>
+      }
+    </ol>
+  }
+</section>

@@ -1,0 +1,120 @@
+:host {
+  display: block;
+  min-height: calc(100vh - 64px);
+  padding: 40px 40px 120px;
+  box-sizing: border-box;
+  background-color: #121212;
+  color: #ffffff;
+  font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+}
+
+.historial__titulo {
+  margin: 0 0 24px;
+  font-size: 1.6rem;
+}
+
+.historial__lista {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  max-width: 900px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.historial__item {
+  display: flex;
+  align-items: center;
+  gap: 20px;
+  padding: 12px 20px;
+  border-radius: 8px;
+  background: #181818;
+}
+
+.historial__play {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  width: 36px;
+  height: 36px;
+  border: none;
+  border-radius: 50%;
+  background: #1DB954;
+  color: #000000;
+  font-size: 14px;
+  cursor: pointer;
+}
+
+.historial__datos {
+  flex-grow: 1;
+  min-width: 0;
+}
+
+.historial__cancion {
+  font-weight: bold;
+}
+
+.historial__artista {
+  color: #b3b3b3;
+  font-size: 0.85rem;
+}
+
+.historial__genero {
+  padding: 4px 10px;
+  border-radius: 12px;
+  background: #333333;
+  color: #b3b3b3;
+  font-size: 0.8rem;
+}
+
+.historial__fecha {
+  color: #b3b3b3;
+  font-size: 0.85rem;
+  white-space: nowrap;
+}
+
+.historial__duracion {
+  min-width: 45px;
+  color: #b3b3b3;
+  font-size: 0.9rem;
+  text-align: right;
+}
+
+.historial__favorito {
+  border: none;
+  background: transparent;
+  color: #b3b3b3;
+  font-size: 1.2rem;
+  cursor: pointer;
+}
+
+.historial__favorito--activo {
+  color: #1DB954;
+}
+
+.historial__vacio {
+  padding: 20px 0;
+  color: #b3b3b3;
+}
+
+.historial button:focus-visible {
+  outline: 2px solid #ffffff;
+  outline-offset: 2px;
+}
+
+@media (max-width: 720px) {
+  :host {
+    padding: 24px 16px 120px;
+  }
+
+  .historial__item {
+    flex-wrap: wrap;
+    gap: 12px;
+  }
+
+  .historial__genero {
+    display: none;
+  }
+}

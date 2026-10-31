@@ -3,7 +3,7 @@ import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { ArtistaService } from '../../../artists/data-access/artista.service';
 import { Artista } from '../../../artists/models/artista.model';
-import { HistorialService } from '../../../songs/data-access/historial.service';
+import { HistorialService, ordenarHistorial } from '../../../songs/data-access/historial.service';
 import { Historial } from '../../../songs/models/historial.model';
 import { CancionService } from '../../../songs/data-access/cancion.service';
 import { ReproductorService } from '../../../songs/data-access/reproductor.service';
@@ -160,11 +160,7 @@ export class HomeComponent implements OnInit, OnDestroy {
   cargarHistorial(): void {
     this.historialService.obtenerHistorial().subscribe({
       next: (data) => {
-        this.historial = (data || []).sort((a, b) => {
-          const tiempoA = new Date(a.fechaReproduccion).getTime();
-          const tiempoB = new Date(b.fechaReproduccion).getTime();
-          return tiempoB - tiempoA;
-        });
+        this.historial = ordenarHistorial(data);
         this.cdr.detectChanges();
       },
       error: (err) => {

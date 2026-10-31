@@ -23,3 +23,12 @@ export class HistorialService {
     return this.http.post<Historial>(url, {});
   }
 }
+
+// Ordena las reproducciones de la más reciente a la más antigua según la fecha que devuelve el backend
+export function ordenarHistorial(historial: Historial[] | null): Historial[] {
+  return (historial || []).sort((a, b) => {
+    const tiempoA = new Date(a.fechaReproduccion).getTime();
+    const tiempoB = new Date(b.fechaReproduccion).getTime();
+    return tiempoB - tiempoA;
+  });
+}
