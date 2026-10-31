@@ -1,0 +1,173 @@
+:host {
+  display: block;
+  min-height: calc(100vh - 64px);
+  padding: 40px 40px 120px;
+  box-sizing: border-box;
+  background-color: #121212;
+  color: #ffffff;
+  font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+}
+
+.favoritos__titulo {
+  margin: 0 0 24px;
+  font-size: 1.6rem;
+}
+
+.favoritos__seccion {
+  margin-bottom: 40px;
+}
+
+.favoritos__subtitulo {
+  margin: 0 0 16px;
+  font-size: 1.2rem;
+}
+
+.favoritos__canciones,
+.favoritos__artistas {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.favoritos__canciones {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  max-width: 900px;
+}
+
+.favoritos__cancion {
+  display: flex;
+  align-items: center;
+  gap: 20px;
+  padding: 12px 20px;
+  border-radius: 8px;
+  background: #181818;
+}
+
+.favoritos__play {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  width: 36px;
+  height: 36px;
+  border: none;
+  border-radius: 50%;
+  background: #1DB954;
+  color: #000000;
+  font-size: 14px;
+  cursor: pointer;
+}
+
+.favoritos__cancion-datos {
+  flex-grow: 1;
+  min-width: 0;
+}
+
+.favoritos__cancion-titulo {
+  font-weight: bold;
+}
+
+.favoritos__cancion-artista {
+  color: #b3b3b3;
+  font-size: 0.85rem;
+}
+
+.favoritos__genero {
+  padding: 4px 10px;
+  border-radius: 12px;
+  background: #333333;
+  color: #b3b3b3;
+  font-size: 0.8rem;
+}
+
+.favoritos__duracion {
+  min-width: 45px;
+  color: #b3b3b3;
+  font-size: 0.9rem;
+  text-align: right;
+}
+
+.favoritos__corazon {
+  border: none;
+  background: transparent;
+  color: #1DB954;
+  font-size: 1.2rem;
+  cursor: pointer;
+}
+
+.favoritos__corazon:disabled {
+  opacity: 0.5;
+  cursor: default;
+}
+
+.favoritos__artistas {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 20px;
+}
+
+.favoritos__artista {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  width: 170px;
+  padding: 20px;
+  box-sizing: border-box;
+  border-radius: 12px;
+  background: #181818;
+}
+
+.favoritos__portada {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 110px;
+  height: 110px;
+  margin-bottom: 15px;
+  overflow: hidden;
+  border-radius: 50%;
+  background: #333333;
+  font-size: 2.5rem;
+}
+
+.favoritos__portada img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.favoritos__artista-nombre {
+  width: 100%;
+  margin-bottom: 12px;
+  overflow: hidden;
+  font-weight: bold;
+  text-align: center;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.favoritos__vacio {
+  padding: 20px 0;
+  color: #b3b3b3;
+}
+
+.favoritos button:focus-visible {
+  outline: 2px solid #ffffff;
+  outline-offset: 2px;
+}
+
+@media (max-width: 720px) {
+  :host {
+    padding: 24px 16px 120px;
+  }
+
+  .favoritos__cancion {
+    gap: 12px;
+  }
+
+  .favoritos__genero {
+    display: none;
+  }
+}

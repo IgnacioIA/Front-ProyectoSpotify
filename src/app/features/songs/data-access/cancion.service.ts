@@ -19,6 +19,11 @@ export class CancionService {
     return this.http.get<Cancion[]>(this.apiUrl);
   }
 
+  // Solo las canciones marcadas como favoritas
+  obtenerFavoritas(): Observable<Cancion[]> {
+    return this.http.get<Cancion[]>(`${this.apiUrl}/favoritas`);
+  }
+
   // Alternar el estado de favorito de una canción - US10
   toggleFavorito(id: number): Observable<Cancion> {
     return this.http.patch<Cancion>(`${this.apiUrl}/${id}/favorito`, {}).pipe(

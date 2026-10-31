@@ -1,0 +1,72 @@
+<section class="favoritos">
+  <h2 class="favoritos__titulo">Tus Favoritos</h2>
+
+  <!-- Canciones favoritas -->
+  <section class="favoritos__seccion" aria-labelledby="favoritos-canciones">
+    <h3 id="favoritos-canciones" class="favoritos__subtitulo">Canciones</h3>
+
+    @if (canciones(); as canciones) {
+      <ul class="favoritos__canciones">
+        @for (cancion of canciones; track cancion.id) {
+          <li class="favoritos__cancion">
+            <button
+              type="button"
+              class="favoritos__play"
+              [attr.aria-label]="(estaSonando(cancion) ? 'Pausar ' : 'Reproducir ') + cancion.titulo"
+              (click)="reproductor.reproducir(cancion)">
+              {{ estaSonando(cancion) ? '❚❚' : '▶' }}
+            </button>
+            <div class="favoritos__cancion-datos">
+              <div class="favoritos__cancion-titulo">{{ cancion.titulo }}</div>
+              <div class="favoritos__cancion-artista">{{ cancion.artista?.nombre }}</div>
+            </div>
+            <span class="favoritos__genero">{{ cancion.genero || 'Rock' }}</span>
+            <span class="favoritos__duracion">{{ formatearDuracion(cancion.duracion) }}</span>
+            <button
+              type="button"
+              class="favoritos__corazon"
+              [attr.aria-label]="'Quitar de favoritos ' + cancion.titulo"
+              [disabled]="cancionesEnCurso().has(cancion.id)"
+              (click)="toggleFavoritoCancion(cancion)">
+              💚
+            </button>
+          </li>
+        } @empty {
+          <li class="favoritos__vacio">Todavía no marcaste canciones como favoritas. Usá el 🤍 en cualquier canción.</li>
+        }
+      </ul>
+    }
+  </section>
+
+  <!-- Artistas favoritos -->
+  <section class="favoritos__seccion" aria-labelledby="favoritos-artistas">
+    <h3 id="favoritos-artistas" class="favoritos__subtitulo">Artistas</h3>
+
+    @if (artistas(); as artistas) {
+      <ul class="favoritos__artistas">
+        @for (artista of artistas; track artista.id) {
+          <li class="favoritos__artista">
+            <div class="favoritos__portada">
+              @if (artista.portada) {
+                <img [src]="artista.portada" [alt]="artista.nombre">
+              } @else {
+                <span aria-hidden="true">🎤</span>
+              }
+            </div>
+            <div class="favoritos__artista-nombre">{{ artista.nombre }}</div>
+            <button
+              type="button"
+              class="favoritos__corazon"
+              [attr.aria-label]="'Quitar de favoritos ' + artista.nombre"
+              [disabled]="artistasEnCurso().has(artista.id)"
+              (click)="toggleFavoritoArtista(artista)">
+              💚
+            </button>
+          </li>
+        } @empty {
+          <li class="favoritos__vacio">Todavía no marcaste artistas como favoritos. Podés hacerlo desde Inicio.</li>
+        }
+      </ul>
+    }
+  </section>
+</section>
