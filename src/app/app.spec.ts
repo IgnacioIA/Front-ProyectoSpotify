@@ -1,6 +1,6 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { provideHttpClient } from '@angular/common/http';
-import { provideHttpClientTesting } from '@angular/common/http/testing';
+import { HttpTestingController, provideHttpClientTesting } from '@angular/common/http/testing';
 import { provideRouter, Router } from '@angular/router';
 import { AppComponent } from './app';
 import { routes } from './app.routes';
@@ -131,6 +131,28 @@ describe('AppComponent', () => {
       fixture.detectChanges();
       expect(TestBed.inject(Router).url).toBe('/');
       expect((fixture.nativeElement as HTMLElement).querySelector('app-home')).toBeTruthy();
+    });
+
+    it('should keep the header search when navigating and apply it to Favoritos', async () => {
+      simularPantalla(false);
+      const fixture = await crear('/');
+      const input = (fixture.nativeElement as HTMLElement).querySelector('.header__input') as HTMLInputElement;
+      input.value = 'soda';
+      input.dispatchEvent(new Event('input'));
+      fixture.detectChanges();
+
+      await elegir(fixture, 'Favoritos');
+      TestBed.inject(HttpTestingController).expectOne('http://localhost:8080/api/canciones/favoritas').flush([
+        { id: 1, titulo: 'Bohemian Rhapsody', genero: 'Rock', duracion: 354, favorito: true },
+        { id: 2, titulo: 'De música ligera', genero: 'Rock', duracion: 210, favorito: true, artista: { id: 2, nombre: 'Soda Stereo' } },
+      ]);
+      fixture.detectChanges();
+      await fixture.whenStable();
+
+      const titulos = Array.from((fixture.nativeElement as HTMLElement).querySelectorAll('.favoritos__cancion-titulo'))
+        .map((el) => el.textContent!.trim());
+      expect(titulos).toEqual(['De música ligera']);
+      expect(((fixture.nativeElement as HTMLElement).querySelector('.header__input') as HTMLInputElement).value).toBe('soda');
     });
 
     it('should leave the artist detail when choosing Inicio while already in Home', async () => {

@@ -11,9 +11,6 @@ export type AccionHome = 'inicio';
   providedIn: 'root'
 })
 export class HomeNavegacionService {
-  // Texto ingresado en el buscador del header; el filtrado sigue en Home.
-  readonly filtroTexto = signal('');
-
   private readonly acciones = new Subject<AccionHome>();
   readonly acciones$ = this.acciones.asObservable();
 

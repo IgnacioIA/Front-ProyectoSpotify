@@ -3,6 +3,7 @@ import { provideHttpClient } from '@angular/common/http';
 import { HttpTestingController, provideHttpClientTesting } from '@angular/common/http/testing';
 import { ReproductorService } from '../../../songs/data-access/reproductor.service';
 import { Playlist } from '../../models/playlist.model';
+import { BusquedaService } from '../../../search/data-access/busqueda.service';
 import { PlaylistsComponent } from './playlists.component';
 
 describe('PlaylistsComponent', () => {
@@ -109,6 +110,24 @@ describe('PlaylistsComponent', () => {
     fixture.detectChanges();
     expect(TestBed.inject(ReproductorService).cancionActual()?.id).toBe(5);
     expect(element.querySelector('.playlists__play')?.textContent?.trim()).toBe('❚❚');
+  });
+
+  it('should filter the songs of the selected playlist with the header search', () => {
+    const soda = { id: 6, titulo: 'De música ligera', genero: 'Rock', duracion: 210, artista: { id: 2, nombre: 'Soda Stereo' } };
+    cargar([{ id: 1, nombre: 'Mix', canciones: [cancion, soda] }]);
+    seleccionar(0, { id: 1, nombre: 'Mix', canciones: [cancion, soda] });
+    const busqueda = TestBed.inject(BusquedaService);
+    const titulos = () => Array.from(element.querySelectorAll('.playlists__cancion-titulo')).map((el) => el.textContent!.trim());
+
+    busqueda.texto.set('queen');
+    fixture.detectChanges();
+    expect(titulos()).toEqual(['Bohemian Rhapsody']);
+    expect(element.querySelector('.playlists__detalle-info')?.textContent).toContain('2 canciones');
+
+    busqueda.texto.set('zzz');
+    fixture.detectChanges();
+    expect(element.textContent).toContain('No hay canciones en esta playlist que coincidan con «zzz».');
+    expect(element.textContent).not.toContain('todavía no tiene canciones');
   });
 
   it('should remove a song from the selected playlist', () => {

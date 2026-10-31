@@ -53,7 +53,7 @@
         </div>
 
         <ul class="playlists__canciones">
-          @for (cancion of playlist.canciones; track cancion.id) {
+          @for (cancion of cancionesFiltradas(); track cancion.id) {
             <li class="playlists__cancion">
               <button
                 type="button"
@@ -85,9 +85,13 @@
               </button>
             </li>
           } @empty {
-            <li class="playlists__vacio">
-              Esta playlist todavía no tiene canciones. Agregalas desde Inicio con el botón «+ Playlist».
-            </li>
+            @if (!playlist.canciones?.length) {
+              <li class="playlists__vacio">
+                Esta playlist todavía no tiene canciones. Agregalas desde Inicio con el botón «+ Playlist».
+              </li>
+            } @else {
+              <li class="playlists__vacio">No hay canciones en esta playlist que coincidan con «{{ busqueda.texto() }}».</li>
+            }
           }
         </ul>
       } @else if (playlistService.playlists().length > 0) {

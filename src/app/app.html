@@ -1,8 +1,8 @@
 <app-header
   [menuAbierto]="menuAbierto"
   (menuToggle)="alternarMenu()"
-  [filtroTexto]="homeNavegacion.filtroTexto()"
-  (filtroTextoChange)="homeNavegacion.filtroTexto.set($event)"
+  [filtroTexto]="busqueda.texto()"
+  (filtroTextoChange)="busqueda.texto.set($event)"
   (tituloClick)="irAInicio()" />
 
 <div class="app-cuerpo">

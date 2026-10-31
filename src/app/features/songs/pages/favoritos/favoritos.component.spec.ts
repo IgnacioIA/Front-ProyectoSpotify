@@ -3,6 +3,7 @@ import { provideHttpClient } from '@angular/common/http';
 import { HttpTestingController, provideHttpClientTesting } from '@angular/common/http/testing';
 import { CancionService } from '../../data-access/cancion.service';
 import { ReproductorService } from '../../data-access/reproductor.service';
+import { BusquedaService } from '../../../search/data-access/busqueda.service';
 import { FavoritosComponent } from './favoritos.component';
 
 describe('FavoritosComponent', () => {
@@ -95,6 +96,22 @@ describe('FavoritosComponent', () => {
     http.expectOne('http://localhost:8080/api/canciones/2/favorito').flush({ ...soda, favorito: false });
     fixture.detectChanges();
     expect(titulos()).toEqual(['Bohemian Rhapsody']);
+  });
+
+  it('should filter the favorite songs, but not the artists, with the header search', () => {
+    cargar([queen, soda], [artista]);
+    const busqueda = TestBed.inject(BusquedaService);
+
+    busqueda.texto.set('ligera');
+    fixture.detectChanges();
+    expect(titulos()).toEqual(['De música ligera']);
+    expect(nombresArtistas()).toEqual(['Queen']);
+
+    busqueda.texto.set('zzz');
+    fixture.detectChanges();
+    expect(titulos()).toEqual([]);
+    expect(element.textContent).toContain('No hay canciones favoritas que coincidan con «zzz».');
+    expect(element.textContent).not.toContain('Todavía no marcaste canciones');
   });
 
   it('should play a favorite song with the shared player', () => {

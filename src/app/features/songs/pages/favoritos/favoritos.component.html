@@ -7,7 +7,7 @@
 
     @if (canciones(); as canciones) {
       <ul class="favoritos__canciones">
-        @for (cancion of canciones; track cancion.id) {
+        @for (cancion of cancionesFiltradas(); track cancion.id) {
           <li class="favoritos__cancion">
             <button
               type="button"
@@ -32,7 +32,11 @@
             </button>
           </li>
         } @empty {
-          <li class="favoritos__vacio">Todavía no marcaste canciones como favoritas. Usá el 🤍 en cualquier canción.</li>
+          @if (canciones.length === 0) {
+            <li class="favoritos__vacio">Todavía no marcaste canciones como favoritas. Usá el 🤍 en cualquier canción.</li>
+          } @else {
+            <li class="favoritos__vacio">No hay canciones favoritas que coincidan con «{{ busqueda.texto() }}».</li>
+          }
         }
       </ul>
     }

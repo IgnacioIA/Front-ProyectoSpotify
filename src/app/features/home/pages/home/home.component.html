@@ -85,8 +85,11 @@
 
           </div>
 
-          <div *ngIf="cancionesFiltradas.length === 0" style="color: #b3b3b3; text-align: center; padding: 30px;">
+          <div *ngIf="cancionesFiltradas.length === 0 && !filtroTexto" style="color: #b3b3b3; text-align: center; padding: 30px;">
             Este artista aún no tiene canciones registradas.
+          </div>
+          <div *ngIf="cancionesFiltradas.length === 0 && filtroTexto" style="color: #b3b3b3; text-align: center; padding: 30px;">
+            No hay canciones que coincidan con «{{ filtroTexto }}».
           </div>
         </div>
 
@@ -377,8 +380,11 @@
 
         </div>
 
-        <div *ngIf="cancionesFiltradas.length === 0" style="color: #b3b3b3; text-align: center; padding: 30px;">
+        <div *ngIf="cancionesFiltradas.length === 0 && !filtroTexto" style="color: #b3b3b3; text-align: center; padding: 30px;">
           No hay canciones en esta vista.
+        </div>
+        <div *ngIf="cancionesFiltradas.length === 0 && filtroTexto" style="color: #b3b3b3; text-align: center; padding: 30px;">
+          No hay canciones que coincidan con «{{ filtroTexto }}».
         </div>
       </div>
     </section>

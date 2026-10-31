@@ -6,6 +6,7 @@ import { ReproductorService } from '../../../songs/data-access/reproductor.servi
 import { CancionService } from '../../../songs/data-access/cancion.service';
 import { Cancion } from '../../../songs/models/cancion.model';
 import { formatearDuracion } from '../../../../shared/utils/formatear-duracion';
+import { BusquedaService, filtrarCanciones } from '../../../search/data-access/busqueda.service';
 
 // Página de Playlists: listar, crear, seleccionar, eliminar y quitar canciones.
 // Las canciones se agregan desde el botón "+ Playlist" de las filas de Inicio.
@@ -30,10 +31,16 @@ export class PlaylistsComponent implements OnInit {
     this.playlistService.playlists().find(p => p.id === this.idSeleccionado()) ?? null
   );
 
+  // El buscador del header filtra las canciones de la playlist seleccionada
+  readonly cancionesFiltradas = computed(() =>
+    filtrarCanciones(this.seleccionada()?.canciones || [], this.busqueda.texto())
+  );
+
   constructor(
     readonly playlistService: PlaylistService,
     readonly reproductor: ReproductorService,
-    private cancionService: CancionService
+    private cancionService: CancionService,
+    readonly busqueda: BusquedaService
   ) { }
 
   ngOnInit(): void {

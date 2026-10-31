@@ -1,4 +1,4 @@
-import { Component, OnDestroy, OnInit, signal } from '@angular/core';
+import { Component, OnDestroy, OnInit, computed, signal } from '@angular/core';
 import { Subscription } from 'rxjs';
 import { CancionService } from '../../data-access/cancion.service';
 import { ReproductorService } from '../../data-access/reproductor.service';
@@ -6,6 +6,7 @@ import { Cancion } from '../../models/cancion.model';
 import { ArtistaService } from '../../../artists/data-access/artista.service';
 import { Artista } from '../../../artists/models/artista.model';
 import { formatearDuracion } from '../../../../shared/utils/formatear-duracion';
+import { BusquedaService, filtrarCanciones } from '../../../search/data-access/busqueda.service';
 
 // Página de Favoritos: canciones y artistas marcados con el corazón.
 // Las listas cambian solo cuando el backend confirma cada operación.
@@ -23,6 +24,9 @@ export class FavoritosComponent implements OnInit, OnDestroy {
   readonly canciones = signal<Cancion[] | null>(null);
   readonly artistas = signal<Artista[] | null>(null);
 
+  // El buscador del header filtra las canciones (no los artistas, igual que en Inicio)
+  readonly cancionesFiltradas = computed(() => filtrarCanciones(this.canciones() || [], this.busqueda.texto()));
+
   // Ids con una petición en curso, para no enviar dos veces el mismo cambio
   readonly cancionesEnCurso = signal<ReadonlySet<number>>(new Set());
   readonly artistasEnCurso = signal<ReadonlySet<number>>(new Set());
@@ -32,7 +36,8 @@ export class FavoritosComponent implements OnInit, OnDestroy {
   constructor(
     private cancionService: CancionService,
     private artistaService: ArtistaService,
-    readonly reproductor: ReproductorService
+    readonly reproductor: ReproductorService,
+    readonly busqueda: BusquedaService
   ) { }
 
   ngOnInit(): void {

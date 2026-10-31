@@ -4,6 +4,7 @@ import { HttpTestingController, provideHttpClientTesting } from '@angular/common
 import { ReproductorService } from '../../../songs/data-access/reproductor.service';
 import { PlaylistService } from '../../../playlists/data-access/playlist.service';
 import { HomeNavegacionService } from '../../data-access/home-navegacion.service';
+import { BusquedaService } from '../../../search/data-access/busqueda.service';
 import { HomeComponent } from './home.component';
 
 describe('HomeComponent', () => {
@@ -30,8 +31,16 @@ describe('HomeComponent', () => {
       { id: 1, titulo: 'Bohemian Rhapsody', artista: { id: 1, nombre: 'Queen' } },
       { id: 2, titulo: 'De música ligera', artista: { id: 2, nombre: 'Soda Stereo' } },
     ];
-    navegacion.filtroTexto.set('queen');
+    TestBed.inject(BusquedaService).texto.set('queen');
     expect(home.cancionesFiltradas.map((c) => c.id)).toEqual([1]);
+  });
+
+  it('should explain when no song matches the search', () => {
+    home.canciones = [{ id: 1, titulo: 'Bohemian Rhapsody', artista: { id: 1, nombre: 'Queen' } }];
+    TestBed.inject(BusquedaService).texto.set('zzz');
+    fixture.detectChanges();
+    expect(fixture.nativeElement.textContent).toContain('No hay canciones que coincidan con «zzz».');
+    expect(fixture.nativeElement.textContent).not.toContain('No hay canciones en esta vista.');
   });
 
   it('should return to the main view when "Inicio" is chosen while already in Home', () => {

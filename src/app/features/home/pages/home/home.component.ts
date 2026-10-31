@@ -13,6 +13,7 @@ import { PlaylistService } from '../../../playlists/data-access/playlist.service
 import { Playlist } from '../../../playlists/models/playlist.model';
 import { Subscription } from 'rxjs';
 import { AccionHome, HomeNavegacionService } from '../../data-access/home-navegacion.service';
+import { BusquedaService, filtrarCanciones } from '../../../search/data-access/busqueda.service';
 
 @Component({
   selector: 'app-home',
@@ -25,9 +26,9 @@ export class HomeComponent implements OnInit, OnDestroy {
   canciones: any[] = [];
   soloFavoritas: boolean = false;
 
-  // El texto lo ingresa el buscador del header
+  // El texto lo ingresa el buscador del header y se comparte con Favoritos y Playlists
   get filtroTexto(): string {
-    return this.homeNavegacion.filtroTexto();
+    return this.busqueda.texto();
   }
 
   // Las playlists se comparten con la página de Playlists a través del servicio
@@ -58,6 +59,7 @@ export class HomeComponent implements OnInit, OnDestroy {
     private historialService: HistorialService,
     private cdr: ChangeDetectorRef,
     private homeNavegacion: HomeNavegacionService,
+    private busqueda: BusquedaService,
     readonly reproductor: ReproductorService
   ) {
     // Artista pedido desde la barra del reproductor (también si Home se crea al navegar desde otra página)
@@ -127,14 +129,9 @@ export class HomeComponent implements OnInit, OnDestroy {
       lista = this.playlistSeleccionada.canciones || [];
     }
 
-    return lista.filter(cancion => {
-      const coincideTexto = cancion.titulo.toLowerCase().includes(this.filtroTexto.toLowerCase()) ||
-        cancion.artista?.nombre?.toLowerCase().includes(this.filtroTexto.toLowerCase());
-
-      const coincideFavorita = this.soloFavoritas ? cancion.favorito === true : true;
-
-      return coincideTexto && coincideFavorita;
-    });
+    return filtrarCanciones(lista, this.filtroTexto).filter(cancion =>
+      this.soloFavoritas ? cancion.favorito === true : true
+    );
   }
 
   // Cargar historial desde el backend ordenado cronológicamente

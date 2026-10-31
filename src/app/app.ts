@@ -4,6 +4,7 @@ import { HeaderComponent } from './layout/header/header.component';
 import { SidebarComponent } from './layout/sidebar/sidebar.component';
 import { PlayerBarComponent } from './layout/player-bar/player-bar.component';
 import { HomeNavegacionService } from './features/home/data-access/home-navegacion.service';
+import { BusquedaService } from './features/search/data-access/busqueda.service';
 
 @Component({
   selector: 'app-root',
@@ -17,7 +18,8 @@ export class AppComponent {
 
   constructor(
     private router: Router,
-    readonly homeNavegacion: HomeNavegacionService
+    private homeNavegacion: HomeNavegacionService,
+    readonly busqueda: BusquedaService
   ) { }
 
   alternarMenu(): void {
