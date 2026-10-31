@@ -2,12 +2,13 @@ import { Component, HostListener } from '@angular/core';
 import { Router, RouterOutlet } from '@angular/router';
 import { HeaderComponent } from './layout/header/header.component';
 import { SidebarComponent } from './layout/sidebar/sidebar.component';
+import { PlayerBarComponent } from './layout/player-bar/player-bar.component';
 import { AccionHome, HomeNavegacionService } from './features/home/data-access/home-navegacion.service';
 
 @Component({
   selector: 'app-root',
   standalone: true,
-  imports: [RouterOutlet, HeaderComponent, SidebarComponent],
+  imports: [RouterOutlet, HeaderComponent, SidebarComponent, PlayerBarComponent],
   templateUrl: './app.html',
   styleUrl: './app.css'
 })

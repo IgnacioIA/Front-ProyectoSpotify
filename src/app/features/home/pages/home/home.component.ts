@@ -1,4 +1,4 @@
-import { Component, OnInit, OnDestroy, ChangeDetectorRef, HostListener } from '@angular/core';
+import { Component, OnInit, OnDestroy, ChangeDetectorRef, HostListener, effect, untracked } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { HttpClient } from '@angular/common/http';
 import { FormsModule } from '@angular/forms';
@@ -7,6 +7,9 @@ import { Artista } from '../../../artists/models/artista.model';
 import { HistorialService } from '../../../songs/data-access/historial.service';
 import { Historial } from '../../../songs/models/historial.model';
 import { CancionService } from '../../../songs/data-access/cancion.service';
+import { ReproductorService } from '../../../songs/data-access/reproductor.service';
+import { Cancion } from '../../../songs/models/cancion.model';
+import { formatearDuracion } from '../../../../shared/utils/formatear-duracion';
 import { Subscription } from 'rxjs';
 import { AccionHome, HomeNavegacionService } from '../../data-access/home-navegacion.service';
 
@@ -32,11 +35,6 @@ export class HomeComponent implements OnInit, OnDestroy {
   playlistSeleccionada: any = null;
   cancionParaPlaylist: any = null;
 
-  cancionActual: any = null;
-  reproduciendo: boolean = false;
-  tiempoActual: number = 0;
-  private intervalo: any = null;
-
   // Propiedades para artistas
   artistas: Artista[] = [];
   soloArtistasFavoritos: boolean = false;
@@ -54,14 +52,32 @@ export class HomeComponent implements OnInit, OnDestroy {
     private artistaService: ArtistaService,
     private historialService: HistorialService,
     private cdr: ChangeDetectorRef,
-    private homeNavegacion: HomeNavegacionService
-  ) { }
+    private homeNavegacion: HomeNavegacionService,
+    readonly reproductor: ReproductorService
+  ) {
+    // Artista pedido desde la barra del reproductor (también si Home se crea al navegar desde otra página)
+    effect(() => {
+      const cancion = this.homeNavegacion.artistaSolicitado();
+      if (cancion) {
+        untracked(() => {
+          this.homeNavegacion.artistaSolicitado.set(null);
+          this.irArtistaDesdeReproductor(cancion);
+        });
+      }
+    });
+  }
 
-  private accionesSub?: Subscription;
+  private suscripciones = new Subscription();
 
   ngOnInit(): void {
     // Opciones del menú lateral
-    this.accionesSub = this.homeNavegacion.acciones$.subscribe(accion => this.ejecutarAccion(accion));
+    this.suscripciones.add(this.homeNavegacion.acciones$.subscribe(accion => this.ejecutarAccion(accion)));
+
+    // El reproductor avisa cuando el backend registró una reproducción nueva (US 9)
+    this.suscripciones.add(this.reproductor.reproduccionRegistrada$.subscribe(() => this.cargarHistorial()));
+
+    // Favoritos cambiados desde cualquier lugar (filas o barra del reproductor)
+    this.suscripciones.add(this.cancionService.favoritoActualizado$.subscribe(c => this.aplicarFavorito(c)));
 
     // Cargar canciones desde el backend
     this.cancionService.obtenerCanciones().subscribe({
@@ -87,8 +103,7 @@ export class HomeComponent implements OnInit, OnDestroy {
   }
 
   ngOnDestroy(): void {
-    this.detenerIntervalo();
-    this.accionesSub?.unsubscribe();
+    this.suscripciones.unsubscribe();
   }
 
   // Resuelve cada opción del menú lateral con los métodos existentes de la pantalla
@@ -284,16 +299,6 @@ export class HomeComponent implements OnInit, OnDestroy {
     this.cdr.detectChanges();
   }
 
-  onVolumeChange(event: any): void {
-    const volumeValue = event.target.value;
-    console.log('Nivel de volumen actual:', volumeValue);
-
-    const audioElement = document.querySelector('audio');
-    if (audioElement) {
-      audioElement.volume = volumeValue;
-    }
-  }
-
   verTodasLasCanciones(): void {
     this.playlistSeleccionada = null;
     this.soloFavoritas = false;
@@ -342,41 +347,12 @@ export class HomeComponent implements OnInit, OnDestroy {
   }
 
   formatearDuracion(segundos: number): string {
-    if (!segundos) return '0:00';
-    const minutos = Math.floor(segundos / 60);
-    const segundosRestantes = Math.floor(segundos % 60);
-    const segundosFormateados = segundosRestantes < 10 ? '0' + segundosRestantes : segundosRestantes;
-    return `${minutos}:${segundosFormateados}`;
+    return formatearDuracion(segundos);
   }
 
+  // El estado de reproducción vive en ReproductorService para persistir entre rutas
   reproducirCancion(cancion: any): void {
-    if (!cancion) return;
-
-    if (this.cancionActual?.id === cancion.id) {
-      this.reproduciendo = !this.reproduciendo;
-    } else {
-      this.cancionActual = cancion;
-      this.reproduciendo = true;
-      this.tiempoActual = 0;
-
-      // Registrar reproducción en el backend (US 9)
-      if (cancion.id) {
-        this.historialService.registrarReproduccion(cancion.id).subscribe({
-          next: () => this.cargarHistorial(),
-          error: (err) => console.error('Error al registrar reproducción en historial:', err)
-        });
-      }
-    }
-    this.gestionarReproduccion();
-    this.cdr.detectChanges();
-  }
-
-  alternarReproduccion(): void {
-    if (this.cancionActual) {
-      this.reproduciendo = !this.reproduciendo;
-      this.gestionarReproduccion();
-      this.cdr.detectChanges();
-    }
+    this.reproductor.reproducir(cancion);
   }
 
   // Alternar favorito y eliminar de favoritos (US 10)
@@ -384,37 +360,28 @@ export class HomeComponent implements OnInit, OnDestroy {
     event.stopPropagation();
     if (!cancion || !cancion.id) return;
 
+    // Las listas se sincronizan en aplicarFavorito cuando el backend confirma el cambio
     this.cancionService.toggleFavorito(cancion.id).subscribe({
-      next: (cancionActualizada) => {
-        // Actualizar estado del favorito (le quita o pone color al corazón)
-        cancion.favorito = cancionActualizada.favorito;
-
-        // Sincronizar en la lista general de canciones (si soloFavoritas está activo, la canción desaparece de inmediato de la lista)
-        const cancionEnLista = this.canciones.find(c => c.id === cancion.id);
-        if (cancionEnLista) {
-          cancionEnLista.favorito = cancionActualizada.favorito;
-        }
-
-        // Sincronizar en cancionActual si está en la barra reproductora inferior
-        if (this.cancionActual && this.cancionActual.id === cancion.id) {
-          this.cancionActual.favorito = cancionActualizada.favorito;
-        }
-
-        // Sincronizar en historial si existe
-        if (this.historial) {
-          this.historial.forEach(h => {
-            if (h.cancion && h.cancion.id === cancion.id) {
-              h.cancion.favorito = cancionActualizada.favorito;
-            }
-          });
-        }
-
-        this.cdr.detectChanges();
-      },
       error: (err) => {
         console.error('Error al actualizar favorito:', err);
       }
     });
+  }
+
+  // Actualizar estado del favorito (le quita o pone color al corazón) en las listas de la pantalla.
+  // Si soloFavoritas está activo, la canción desaparece de inmediato de la lista.
+  private aplicarFavorito(cancionActualizada: Cancion): void {
+    const sincronizar = (cancion: any) => {
+      if (cancion && cancion.id === cancionActualizada.id) {
+        cancion.favorito = cancionActualizada.favorito;
+      }
+    };
+
+    this.canciones.forEach(sincronizar);
+    this.historial.forEach(h => sincronizar(h.cancion));
+    this.playlistSeleccionada?.canciones?.forEach(sincronizar);
+
+    this.cdr.detectChanges();
   }
 
   // Métodos para Artistas (US6)
@@ -487,35 +454,5 @@ export class HomeComponent implements OnInit, OnDestroy {
         console.error('Error al actualizar favorito de artista:', err);
       }
     });
-  }
-
-  private gestionarReproduccion(): void {
-    if (this.reproduciendo) {
-      this.iniciarIntervalo();
-    } else {
-      this.detenerIntervalo();
-    }
-  }
-
-  private iniciarIntervalo(): void {
-    this.detenerIntervalo();
-    this.intervalo = setInterval(() => {
-      if (this.cancionActual && this.reproduciendo) {
-        if (this.tiempoActual < this.cancionActual.duracion) {
-          this.tiempoActual++;
-        } else {
-          this.reproduciendo = false;
-          this.detenerIntervalo();
-        }
-        this.cdr.detectChanges();
-      }
-    }, 1000);
-  }
-
-  private detenerIntervalo(): void {
-    if (this.intervalo) {
-      clearInterval(this.intervalo);
-      this.intervalo = null;
-    }
   }
 }
