@@ -106,32 +106,13 @@ export class HomeComponent implements OnInit, OnDestroy {
     this.suscripciones.unsubscribe();
   }
 
-  // Resuelve cada opción del menú lateral con los métodos existentes de la pantalla
+  // "Inicio" desde el menú o el título estando ya en Home: vuelve a la vista principal
+  // (sale del detalle de artista, del historial o de una playlist) y sube al principio
   ejecutarAccion(accion: AccionHome): void {
-    switch (accion) {
-      case 'historial':
-        this.mostrarHistorial();
-        return;
-      case 'favoritos':
-        this.verTodasLasCanciones();
-        this.toggleFiltroFavoritas();
-        this.irASeccion('seccion-canciones');
-        return;
-      case 'canciones':
-      case 'artistas':
-      case 'playlists':
-        this.verTodasLasCanciones();
-        this.irASeccion(`seccion-${accion}`);
-        return;
-      default:
-        this.verTodasLasCanciones();
-        window.scrollTo({ top: 0, behavior: 'smooth' });
+    if (accion === 'inicio') {
+      this.verTodasLasCanciones();
+      window.scrollTo({ top: 0, behavior: 'smooth' });
     }
-  }
-
-  private irASeccion(id: string): void {
-    // verTodasLasCanciones() ya renderizó la vista principal, así que la sección está en el DOM
-    document.getElementById(id)?.scrollIntoView({ behavior: 'smooth', block: 'start' });
   }
 
   get cancionesFiltradas() {

@@ -2,10 +2,11 @@ import { Injectable, signal } from '@angular/core';
 import { Subject } from 'rxjs';
 import { Cancion } from '../../songs/models/cancion.model';
 
-// Opciones del menú lateral que Home resuelve con su lógica existente.
-export type AccionHome = 'inicio' | 'canciones' | 'artistas' | 'playlists' | 'favoritos' | 'historial';
+// Acción del layout que Home resuelve con su lógica: volver a la vista principal.
+// Hace falta porque navegar a "/" estando en "/" no recrea Home (por ejemplo, para salir del detalle de artista).
+export type AccionHome = 'inicio';
 
-// Comunica el header y el menú lateral (en el componente raíz) con la página Home.
+// Comunica el header, el menú lateral y la barra del reproductor (en el componente raíz) con la página Home.
 @Injectable({
   providedIn: 'root'
 })

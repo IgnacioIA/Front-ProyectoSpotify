@@ -3,7 +3,7 @@
   (menuToggle)="alternarMenu()"
   [filtroTexto]="homeNavegacion.filtroTexto()"
   (filtroTextoChange)="homeNavegacion.filtroTexto.set($event)"
-  (tituloClick)="seleccionar('inicio')" />
+  (tituloClick)="irAInicio()" />
 
 <div class="app-cuerpo">
   <app-sidebar [abierto]="menuAbierto" (seleccion)="seleccionar($event)" (cerrar)="cerrarMenu()" />

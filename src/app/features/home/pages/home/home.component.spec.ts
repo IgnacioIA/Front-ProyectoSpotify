@@ -10,14 +10,9 @@ describe('HomeComponent', () => {
   let fixture: ComponentFixture<HomeComponent>;
   let home: HomeComponent;
   let navegacion: HomeNavegacionService;
-  let seccionesDesplazadas: string[];
 
   beforeEach(async () => {
-    // jsdom no implementa el desplazamiento; se registra a qué elemento se desplaza
-    seccionesDesplazadas = [];
-    Element.prototype.scrollIntoView = function (this: Element) {
-      seccionesDesplazadas.push(this.id);
-    };
+    // jsdom no implementa el desplazamiento de la ventana
     window.scrollTo = () => {};
 
     await TestBed.configureTestingModule({
@@ -39,33 +34,18 @@ describe('HomeComponent', () => {
     expect(home.cancionesFiltradas.map((c) => c.id)).toEqual([1]);
   });
 
-  it('should open the existing history view from the menu', () => {
-    navegacion.emitirAccion('historial');
-    expect(home.viendoHistorial).toBe(true);
-    expect(fixture.nativeElement.textContent).toContain('Historial de reproducción');
-  });
+  it('should return to the main view when "Inicio" is chosen while already in Home', () => {
+    home.seleccionarArtista({ id: 7, nombre: 'Queen' });
+    expect(fixture.nativeElement.textContent).toContain('Canciones populares');
 
-  it('should activate the existing favorites filter from the menu, even if pressed twice', () => {
-    navegacion.emitirAccion('favoritos');
-    expect(home.soloFavoritas).toBe(true);
-    navegacion.emitirAccion('favoritos');
-    expect(home.soloFavoritas).toBe(true);
-  });
+    navegacion.emitirAccion('inicio');
+    expect(home.artistaSeleccionado).toBeNull();
+    expect(fixture.nativeElement.textContent).not.toContain('Canciones populares');
 
-  it('should return to the main view from the menu', () => {
-    navegacion.emitirAccion('historial');
+    home.mostrarHistorial();
     navegacion.emitirAccion('inicio');
     expect(home.viendoHistorial).toBe(false);
     expect(home.soloFavoritas).toBe(false);
-    expect(home.artistaSeleccionado).toBeNull();
-  });
-
-  it('should scroll to the existing sections from the menu', () => {
-    navegacion.emitirAccion('historial');
-    navegacion.emitirAccion('canciones');
-    navegacion.emitirAccion('artistas');
-    navegacion.emitirAccion('favoritos');
-    expect(seccionesDesplazadas).toEqual(['seccion-canciones', 'seccion-artistas', 'seccion-canciones']);
   });
 
   it('should play through the shared player and reload the history once the backend registers it', () => {
@@ -107,12 +87,11 @@ describe('HomeComponent', () => {
   });
 
   it('should show the playlists section only when playlists exist', () => {
-    navegacion.emitirAccion('playlists');
-    expect(seccionesDesplazadas).toEqual([]);
+    const element = fixture.nativeElement as HTMLElement;
+    expect(element.querySelector('#seccion-playlists')).toBeNull();
 
     TestBed.inject(HttpTestingController).expectOne('http://localhost:8080/api/playlists').flush([{ id: 1, nombre: 'Mix', canciones: [] }]);
     fixture.detectChanges();
-    navegacion.emitirAccion('playlists');
-    expect(seccionesDesplazadas).toEqual(['seccion-playlists']);
+    expect(element.querySelector('#seccion-playlists')?.textContent).toContain('Mix');
   });
 });

@@ -3,7 +3,7 @@ import { Router, RouterOutlet } from '@angular/router';
 import { HeaderComponent } from './layout/header/header.component';
 import { SidebarComponent } from './layout/sidebar/sidebar.component';
 import { PlayerBarComponent } from './layout/player-bar/player-bar.component';
-import { AccionHome, HomeNavegacionService } from './features/home/data-access/home-navegacion.service';
+import { HomeNavegacionService } from './features/home/data-access/home-navegacion.service';
 
 @Component({
   selector: 'app-root',
@@ -29,11 +29,19 @@ export class AppComponent {
     this.menuAbierto = false;
   }
 
-  // Las opciones del menú y el título llevan a Home, que resuelve la acción con su lógica
-  seleccionar(accion: AccionHome): void {
+  // Las opciones del menú navegan con routerLink; acá solo se cierra el menú en pantallas pequeñas.
+  // Si ya se está en Inicio, la URL no cambia y Home vuelve a su vista principal con la acción.
+  seleccionar(ruta: string): void {
     if (window.matchMedia('(max-width: 720px)').matches) {
       this.cerrarMenu();
     }
-    this.router.navigate(['/']).then(() => this.homeNavegacion.emitirAccion(accion));
+    if (ruta === '/') {
+      this.homeNavegacion.emitirAccion('inicio');
+    }
+  }
+
+  irAInicio(): void {
+    this.seleccionar('/');
+    this.router.navigate(['/']);
   }
 }

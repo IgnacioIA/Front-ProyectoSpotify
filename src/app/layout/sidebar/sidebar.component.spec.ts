@@ -9,7 +9,9 @@ describe('SidebarComponent', () => {
   beforeEach(async () => {
     await TestBed.configureTestingModule({
       imports: [SidebarComponent],
-      providers: [provideRouter([])],
+      providers: [
+        provideRouter(['playlists', 'favoritos', 'historial'].map((path) => ({ path, children: [] }))),
+      ],
     }).compileComponents();
     fixture = TestBed.createComponent(SidebarComponent);
     element = fixture.nativeElement as HTMLElement;
@@ -21,31 +23,32 @@ describe('SidebarComponent', () => {
     fixture.detectChanges();
   }
 
+  function opciones(): HTMLAnchorElement[] {
+    return Array.from(element.querySelectorAll('.sidebar__opcion'));
+  }
+
   it('should not render the menu while closed', () => {
     expect(element.querySelector('nav')).toBeNull();
   });
 
-  it('should list the menu options in order', () => {
+  it('should list only Inicio, Playlists, Favoritos and Historial as real links', () => {
     abrir();
-    const textos = Array.from(element.querySelectorAll('.sidebar__opcion')).map((el) =>
-      el.textContent!.replace(/\s+/g, ' ').trim(),
-    );
-    expect(textos).toEqual([
+    expect(opciones().map((el) => el.textContent!.replace(/\s+/g, ' ').trim())).toEqual([
       '🏠 Inicio',
-      '🎵 Canciones',
-      '🎤 Artistas',
       '📁 Playlists',
       '💚 Favoritos',
       '🕘 Historial',
     ]);
+    expect(opciones().map((el) => el.getAttribute('href'))).toEqual(['/', '/playlists', '/favoritos', '/historial']);
   });
 
-  it('should emit the selected option', () => {
+  it('should emit the chosen route', async () => {
     abrir();
     const emitidas: string[] = [];
-    fixture.componentInstance.seleccion.subscribe((accion) => emitidas.push(accion));
-    element.querySelectorAll<HTMLElement>('.sidebar__opcion').forEach((opcion) => opcion.click());
-    expect(emitidas).toEqual(['inicio', 'canciones', 'artistas', 'playlists', 'favoritos', 'historial']);
+    fixture.componentInstance.seleccion.subscribe((ruta) => emitidas.push(ruta));
+    opciones().forEach((opcion) => opcion.click());
+    await fixture.whenStable();
+    expect(emitidas).toEqual(['/', '/playlists', '/favoritos', '/historial']);
   });
 
   it('should ask to close when the backdrop is clicked', () => {

@@ -5,6 +5,7 @@ import { provideRouter, Router } from '@angular/router';
 import { AppComponent } from './app';
 import { routes } from './app.routes';
 import { ReproductorService } from './features/songs/data-access/reproductor.service';
+import { HomeNavegacionService } from './features/home/data-access/home-navegacion.service';
 import { Cancion } from './features/songs/models/cancion.model';
 
 describe('AppComponent', () => {
@@ -59,6 +60,90 @@ describe('AppComponent', () => {
     await TestBed.inject(Router).navigateByUrl('/');
     fixture.detectChanges();
     expect((fixture.nativeElement as HTMLElement).querySelector('app-home')).toBeTruthy();
+  });
+
+  describe('navigation', () => {
+    const matchMediaOriginal = window.matchMedia;
+
+    afterEach(() => {
+      window.matchMedia = matchMediaOriginal;
+    });
+
+    // jsdom no implementa matchMedia; se simula el ancho de pantalla
+    function simularPantalla(movil: boolean): void {
+      window.matchMedia = ((consulta: string) => ({ matches: movil, media: consulta })) as unknown as typeof window.matchMedia;
+    }
+
+    async function crear(url: string): Promise<ComponentFixture<AppComponent>> {
+      window.scrollTo = () => {};
+      const fixture = TestBed.createComponent(AppComponent);
+      await TestBed.inject(Router).navigateByUrl(url);
+      fixture.componentInstance.menuAbierto = true;
+      fixture.detectChanges();
+      return fixture;
+    }
+
+    function opcion(fixture: ComponentFixture<AppComponent>, texto: string): HTMLAnchorElement {
+      return Array.from((fixture.nativeElement as HTMLElement).querySelectorAll<HTMLAnchorElement>('.sidebar__opcion'))
+        .find((a) => a.textContent!.includes(texto))!;
+    }
+
+    async function elegir(fixture: ComponentFixture<AppComponent>, texto: string): Promise<void> {
+      opcion(fixture, texto).click();
+      await fixture.whenStable();
+      fixture.detectChanges();
+    }
+
+    it('should navigate to each page from the side menu and mark the active option', async () => {
+      simularPantalla(false);
+      const fixture = await crear('/');
+      const router = TestBed.inject(Router);
+      const paginas: [string, string, string][] = [
+        ['Playlists', '/playlists', 'app-playlists'],
+        ['Favoritos', '/favoritos', 'app-favoritos'],
+        ['Historial', '/historial', 'app-historial'],
+        ['Inicio', '/', 'app-home'],
+      ];
+
+      for (const [texto, url, selector] of paginas) {
+        await elegir(fixture, texto);
+        expect(router.url).toBe(url);
+        expect((fixture.nativeElement as HTMLElement).querySelector(selector)).toBeTruthy();
+        expect(opcion(fixture, texto).getAttribute('aria-current')).toBe('page');
+        expect((fixture.nativeElement as HTMLElement).querySelectorAll('[aria-current=page]').length).toBe(1);
+      }
+      expect(fixture.componentInstance.menuAbierto).toBe(true);
+    });
+
+    it('should close the menu after choosing an option on small screens', async () => {
+      simularPantalla(true);
+      const fixture = await crear('/');
+      await elegir(fixture, 'Favoritos');
+      expect(TestBed.inject(Router).url).toBe('/favoritos');
+      expect(fixture.componentInstance.menuAbierto).toBe(false);
+    });
+
+    it('should go back to Inicio from the title', async () => {
+      simularPantalla(false);
+      const fixture = await crear('/historial');
+      ((fixture.nativeElement as HTMLElement).querySelector('.header__titulo-boton') as HTMLButtonElement).click();
+      await fixture.whenStable();
+      fixture.detectChanges();
+      expect(TestBed.inject(Router).url).toBe('/');
+      expect((fixture.nativeElement as HTMLElement).querySelector('app-home')).toBeTruthy();
+    });
+
+    it('should leave the artist detail when choosing Inicio while already in Home', async () => {
+      simularPantalla(false);
+      const fixture = await crear('/');
+      TestBed.inject(HomeNavegacionService).artistaSolicitado.set({ id: 1, titulo: 'X', genero: '', duracion: 1, artista: { id: 7, nombre: 'Queen' } });
+      fixture.detectChanges();
+      const home = () => (fixture.nativeElement as HTMLElement).querySelector('app-home')!;
+      expect(home().textContent).toContain('Canciones populares');
+
+      await elegir(fixture, 'Inicio');
+      expect(home().textContent).not.toContain('Canciones populares');
+    });
   });
 
   describe('persistent player', () => {
