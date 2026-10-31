@@ -2,6 +2,7 @@ import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { provideHttpClient } from '@angular/common/http';
 import { HttpTestingController, provideHttpClientTesting } from '@angular/common/http/testing';
 import { ReproductorService } from '../../../songs/data-access/reproductor.service';
+import { PlaylistService } from '../../../playlists/data-access/playlist.service';
 import { HomeNavegacionService } from '../../data-access/home-navegacion.service';
 import { HomeComponent } from './home.component';
 
@@ -93,11 +94,23 @@ describe('HomeComponent', () => {
     expect(home.historial[0].cancion.favorito).toBe(true);
   });
 
+  it('should add a song from the "+ Playlist" menu to the shared playlists', () => {
+    const http = TestBed.inject(HttpTestingController);
+    const cancion = { id: 5, titulo: 'Bohemian Rhapsody', genero: 'Rock', duracion: 354 };
+    http.expectOne('http://localhost:8080/api/playlists').flush([{ id: 1, nombre: 'Mix', canciones: [] }]);
+
+    home.agregarAPlaylist(cancion, home.playlists[0], new Event('click'));
+    http.expectOne('http://localhost:8080/api/playlists/1/canciones/5').flush({ id: 1, nombre: 'Mix', canciones: [cancion] });
+
+    expect(TestBed.inject(PlaylistService).playlists()[0].canciones).toEqual([cancion]);
+    expect(home.cancionParaPlaylist).toBeNull();
+  });
+
   it('should show the playlists section only when playlists exist', () => {
     navegacion.emitirAccion('playlists');
     expect(seccionesDesplazadas).toEqual([]);
 
-    home.playlists = [{ id: 1, nombre: 'Mix', canciones: [] }];
+    TestBed.inject(HttpTestingController).expectOne('http://localhost:8080/api/playlists').flush([{ id: 1, nombre: 'Mix', canciones: [] }]);
     fixture.detectChanges();
     navegacion.emitirAccion('playlists');
     expect(seccionesDesplazadas).toEqual(['seccion-playlists']);

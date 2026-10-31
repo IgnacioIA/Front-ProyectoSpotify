@@ -1,0 +1,98 @@
+<section class="playlists">
+  <header class="playlists__encabezado">
+    <h2 class="playlists__titulo">Tus Playlists</h2>
+
+    <form class="playlists__crear" (ngSubmit)="crear()" novalidate>
+      <input
+        type="text"
+        class="playlists__input"
+        name="nombre"
+        aria-label="Nombre de la nueva playlist"
+        placeholder="Nombre de la playlist..."
+        autocomplete="off"
+        [attr.aria-invalid]="errorNombre()"
+        [(ngModel)]="nombreNueva">
+      <button type="submit" class="playlists__boton" [disabled]="creando()">
+        {{ creando() ? 'Creando...' : '+ Crear Playlist' }}
+      </button>
+    </form>
+  </header>
+  @if (errorNombre()) {
+    <p class="playlists__error" role="alert">Ingresá un nombre para la playlist.</p>
+  }
+
+  <div class="playlists__contenido">
+    <!-- Listado -->
+    <nav class="playlists__lista" aria-label="Playlists">
+      @for (playlist of playlistService.playlists(); track playlist.id) {
+        <button
+          type="button"
+          class="playlists__item"
+          [class.playlists__item--activa]="seleccionada()?.id === playlist.id"
+          [attr.aria-pressed]="seleccionada()?.id === playlist.id"
+          (click)="seleccionar(playlist)">
+          <span class="playlists__item-nombre">📁 {{ playlist.nombre }}</span>
+          <span class="playlists__item-cantidad">{{ playlist.canciones?.length || 0 }}</span>
+        </button>
+      } @empty {
+        <p class="playlists__vacio">Todavía no creaste ninguna playlist.</p>
+      }
+    </nav>
+
+    <!-- Detalle de la playlist seleccionada -->
+    <div class="playlists__detalle">
+      @if (seleccionada(); as playlist) {
+        <div class="playlists__detalle-encabezado">
+          <div>
+            <h3 class="playlists__detalle-titulo">{{ playlist.nombre }}</h3>
+            <p class="playlists__detalle-info">{{ playlist.canciones?.length || 0 }} canciones</p>
+          </div>
+          <button type="button" class="playlists__peligro" [disabled]="procesando()" (click)="eliminar(playlist)">
+            Eliminar playlist
+          </button>
+        </div>
+
+        <ul class="playlists__canciones">
+          @for (cancion of playlist.canciones; track cancion.id) {
+            <li class="playlists__cancion">
+              <button
+                type="button"
+                class="playlists__play"
+                [attr.aria-label]="(estaSonando(cancion) ? 'Pausar ' : 'Reproducir ') + cancion.titulo"
+                (click)="reproductor.reproducir(cancion)">
+                {{ estaSonando(cancion) ? '❚❚' : '▶' }}
+              </button>
+              <div class="playlists__cancion-datos">
+                <div class="playlists__cancion-titulo">{{ cancion.titulo }}</div>
+                <div class="playlists__cancion-artista">{{ cancion.artista?.nombre }}</div>
+              </div>
+              <span class="playlists__genero">{{ cancion.genero || 'Rock' }}</span>
+              <span class="playlists__duracion">{{ formatearDuracion(cancion.duracion) }}</span>
+              <button
+                type="button"
+                class="playlists__favorito"
+                [class.playlists__favorito--activo]="cancion.favorito"
+                [attr.aria-label]="(cancion.favorito ? 'Quitar de favoritos ' : 'Agregar a favoritos ') + cancion.titulo"
+                (click)="toggleFavorito(cancion)">
+                {{ cancion.favorito ? '💚' : '🤍' }}
+              </button>
+              <button
+                type="button"
+                class="playlists__peligro playlists__peligro--chico"
+                [disabled]="procesando()"
+                (click)="quitarCancion(cancion, playlist)">
+                Eliminar de la Playlist
+              </button>
+            </li>
+          } @empty {
+            <li class="playlists__vacio">
+              Esta playlist todavía no tiene canciones. Agregalas desde Inicio con el botón «+ Playlist».
+            </li>
+          }
+        </ul>
+      } @else if (playlistService.playlists().length > 0) {
+        <p class="playlists__vacio">Elegí una playlist para ver sus canciones.</p>
+      }
+    </div>
+  </div>
+</section>

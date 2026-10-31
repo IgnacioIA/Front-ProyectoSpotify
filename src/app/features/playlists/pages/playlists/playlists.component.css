@@ -1,0 +1,281 @@
+:host {
+  display: block;
+  min-height: calc(100vh - 64px);
+  padding: 40px 40px 120px;
+  box-sizing: border-box;
+  background-color: #121212;
+  color: #ffffff;
+  font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+}
+
+.playlists__encabezado {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-between;
+  align-items: center;
+  gap: 16px;
+  margin-bottom: 24px;
+}
+
+.playlists__titulo {
+  margin: 0;
+  font-size: 1.6rem;
+}
+
+.playlists__crear {
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.playlists__input {
+  width: 240px;
+  max-width: 100%;
+  height: 40px;
+  padding: 0 14px;
+  border: 2px solid transparent;
+  border-radius: 20px;
+  background: #242424;
+  color: #ffffff;
+  font: inherit;
+}
+
+.playlists__input:focus {
+  outline: none;
+  border-color: #ffffff;
+}
+
+.playlists__input[aria-invalid='true'] {
+  border-color: #f15e6c;
+}
+
+.playlists__error {
+  margin: -12px 0 20px;
+  color: #f15e6c;
+  font-size: 0.9rem;
+}
+
+.playlists__boton {
+  height: 40px;
+  padding: 0 20px;
+  border: none;
+  border-radius: 20px;
+  background: #1DB954;
+  color: #000000;
+  font: inherit;
+  font-weight: bold;
+  cursor: pointer;
+}
+
+.playlists__boton:hover:not(:disabled) {
+  background: #1ed760;
+}
+
+.playlists__contenido {
+  display: grid;
+  grid-template-columns: 260px minmax(0, 1fr);
+  gap: 32px;
+  align-items: start;
+}
+
+.playlists__lista {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.playlists__item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 12px;
+  padding: 12px 16px;
+  border: none;
+  border-radius: 8px;
+  background: #181818;
+  color: #ffffff;
+  font: inherit;
+  font-weight: bold;
+  text-align: left;
+  cursor: pointer;
+}
+
+.playlists__item:hover {
+  background: #282828;
+}
+
+.playlists__item--activa {
+  background: #1DB954;
+  color: #000000;
+}
+
+.playlists__item--activa:hover {
+  background: #1ed760;
+}
+
+.playlists__item-nombre {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.playlists__item-cantidad {
+  font-size: 0.85rem;
+  opacity: 0.8;
+}
+
+.playlists__detalle-encabezado {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-between;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 20px;
+}
+
+.playlists__detalle-titulo {
+  margin: 0;
+  font-size: 1.4rem;
+}
+
+.playlists__detalle-info {
+  margin: 4px 0 0;
+  color: #b3b3b3;
+  font-size: 0.9rem;
+}
+
+.playlists__canciones {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  max-width: 900px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.playlists__cancion {
+  display: flex;
+  align-items: center;
+  gap: 20px;
+  padding: 12px 20px;
+  border-radius: 8px;
+  background: #181818;
+}
+
+.playlists__play {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  width: 36px;
+  height: 36px;
+  border: none;
+  border-radius: 50%;
+  background: #1DB954;
+  color: #000000;
+  font-size: 14px;
+  cursor: pointer;
+}
+
+.playlists__cancion-datos {
+  flex-grow: 1;
+  min-width: 0;
+}
+
+.playlists__cancion-titulo {
+  font-weight: bold;
+}
+
+.playlists__cancion-artista {
+  color: #b3b3b3;
+  font-size: 0.85rem;
+}
+
+.playlists__genero {
+  padding: 4px 10px;
+  border-radius: 12px;
+  background: #333333;
+  color: #b3b3b3;
+  font-size: 0.8rem;
+}
+
+.playlists__duracion {
+  min-width: 45px;
+  color: #b3b3b3;
+  font-size: 0.9rem;
+  text-align: right;
+}
+
+.playlists__favorito {
+  border: none;
+  background: transparent;
+  color: #b3b3b3;
+  font-size: 1.2rem;
+  cursor: pointer;
+}
+
+.playlists__favorito--activo {
+  color: #1DB954;
+}
+
+.playlists__peligro {
+  padding: 8px 16px;
+  border: 1px solid #ff4d4d;
+  border-radius: 20px;
+  background: #282828;
+  color: #ff4d4d;
+  font: inherit;
+  font-weight: bold;
+  white-space: nowrap;
+  cursor: pointer;
+}
+
+.playlists__peligro:hover:not(:disabled) {
+  background: #ff4d4d;
+  color: #ffffff;
+}
+
+.playlists__peligro--chico {
+  padding: 6px 12px;
+  border-radius: 12px;
+  font-size: 0.8rem;
+}
+
+.playlists__boton:disabled,
+.playlists__peligro:disabled {
+  opacity: 0.6;
+  cursor: default;
+}
+
+.playlists__vacio {
+  margin: 0;
+  padding: 20px 0;
+  color: #b3b3b3;
+}
+
+.playlists button:focus-visible,
+.playlists__input:focus-visible {
+  outline: 2px solid #ffffff;
+  outline-offset: 2px;
+}
+
+@media (max-width: 720px) {
+  :host {
+    padding: 24px 16px 120px;
+  }
+
+  .playlists__contenido {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .playlists__cancion {
+    flex-wrap: wrap;
+    gap: 12px;
+  }
+
+  .playlists__genero {
+    display: none;
+  }
+}

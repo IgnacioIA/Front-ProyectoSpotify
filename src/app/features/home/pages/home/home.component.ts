@@ -1,6 +1,5 @@
 import { Component, OnInit, OnDestroy, ChangeDetectorRef, HostListener, effect, untracked } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { HttpClient } from '@angular/common/http';
 import { FormsModule } from '@angular/forms';
 import { ArtistaService } from '../../../artists/data-access/artista.service';
 import { Artista } from '../../../artists/models/artista.model';
@@ -10,6 +9,8 @@ import { CancionService } from '../../../songs/data-access/cancion.service';
 import { ReproductorService } from '../../../songs/data-access/reproductor.service';
 import { Cancion } from '../../../songs/models/cancion.model';
 import { formatearDuracion } from '../../../../shared/utils/formatear-duracion';
+import { PlaylistService } from '../../../playlists/data-access/playlist.service';
+import { Playlist } from '../../../playlists/models/playlist.model';
 import { Subscription } from 'rxjs';
 import { AccionHome, HomeNavegacionService } from '../../data-access/home-navegacion.service';
 
@@ -29,7 +30,11 @@ export class HomeComponent implements OnInit, OnDestroy {
     return this.homeNavegacion.filtroTexto();
   }
 
-  playlists: any[] = [];
+  // Las playlists se comparten con la página de Playlists a través del servicio
+  get playlists(): Playlist[] {
+    return this.playlistService.playlists();
+  }
+
   nombreNuevaPlaylist: string = '';
   mostrarModalCrearPlaylist: boolean = false;
   playlistSeleccionada: any = null;
@@ -47,8 +52,8 @@ export class HomeComponent implements OnInit, OnDestroy {
   private apiUrl = 'http://localhost:8080/api/canciones';
 
   constructor(
-    private http: HttpClient,
     private cancionService: CancionService,
+    private playlistService: PlaylistService,
     private artistaService: ArtistaService,
     private historialService: HistorialService,
     private cdr: ChangeDetectorRef,
@@ -88,12 +93,7 @@ export class HomeComponent implements OnInit, OnDestroy {
     });
 
     // Cargar playlists del backend
-    this.http.get<any[]>('http://localhost:8080/api/playlists').subscribe({
-      next: (data) => {
-        this.playlists = data;
-        this.cdr.detectChanges();
-      }
-    });
+    this.playlistService.cargarPlaylists().subscribe();
 
     // Cargar artistas
     this.cargarArtistas();
@@ -203,13 +203,9 @@ export class HomeComponent implements OnInit, OnDestroy {
   crearPlaylist(): void {
     if (!this.nombreNuevaPlaylist.trim()) return;
 
-    const nuevaPlaylist = { nombre: this.nombreNuevaPlaylist.trim() };
-
-    this.http.post<any>('http://localhost:8080/api/playlists', nuevaPlaylist).subscribe({
-      next: (playlistCreada) => {
-        this.playlists.push(playlistCreada);
+    this.playlistService.crearPlaylist(this.nombreNuevaPlaylist.trim()).subscribe({
+      next: () => {
         this.cerrarModalPlaylist();
-        this.cdr.detectChanges();
       },
       error: (err) => {
         console.error('Error al crear la playlist:', err);
@@ -221,13 +217,9 @@ export class HomeComponent implements OnInit, OnDestroy {
     this.playlistSeleccionada = playlist;
     this.soloFavoritas = false;
     this.viendoHistorial = false;
-    this.http.get<any>(`http://localhost:8080/api/playlists/${playlist.id}`).subscribe({
+    this.playlistService.obtenerPlaylist(playlist.id).subscribe({
       next: (plActualizada) => {
         this.playlistSeleccionada = plActualizada;
-        const index = this.playlists.findIndex(p => p.id === playlist.id);
-        if (index !== -1) {
-          this.playlists[index] = plActualizada;
-        }
         this.cdr.detectChanges();
       },
       error: () => {
@@ -241,11 +233,8 @@ export class HomeComponent implements OnInit, OnDestroy {
   eliminarPlaylist(playlist: any): void {
     if (!playlist || !playlist.id) return;
 
-    this.http.delete(`http://localhost:8080/api/playlists/${playlist.id}`).subscribe({
+    this.playlistService.eliminarPlaylist(playlist.id).subscribe({
       next: () => {
-        // Eliminar la playlist de la lista de playlists
-        this.playlists = this.playlists.filter(p => p.id !== playlist.id);
-
         // Si la playlist eliminada era la que estaba seleccionada, limpiar la vista personalizada
         if (this.playlistSeleccionada?.id === playlist.id) {
           this.playlistSeleccionada = null;
@@ -264,24 +253,10 @@ export class HomeComponent implements OnInit, OnDestroy {
     event.stopPropagation();
     if (!cancion || !cancion.id || !playlist || !playlist.id) return;
 
-    this.http.delete<any>(`http://localhost:8080/api/playlists/${playlist.id}/canciones/${cancion.id}`).subscribe({
+    this.playlistService.quitarCancion(playlist.id, cancion.id).subscribe({
       next: (playlistActualizada) => {
-        if (playlistActualizada && playlistActualizada.canciones) {
-          if (this.playlistSeleccionada?.id === playlist.id) {
-            this.playlistSeleccionada = playlistActualizada;
-          }
-          const index = this.playlists.findIndex(p => p.id === playlist.id);
-          if (index !== -1) {
-            this.playlists[index] = playlistActualizada;
-          }
-        } else {
-          if (this.playlistSeleccionada?.id === playlist.id && this.playlistSeleccionada.canciones) {
-            this.playlistSeleccionada.canciones = this.playlistSeleccionada.canciones.filter((c: any) => c.id !== cancion.id);
-          }
-          const pl = this.playlists.find(p => p.id === playlist.id);
-          if (pl && pl.canciones) {
-            pl.canciones = pl.canciones.filter((c: any) => c.id !== cancion.id);
-          }
+        if (playlistActualizada && this.playlistSeleccionada?.id === playlist.id) {
+          this.playlistSeleccionada = playlistActualizada;
         }
         this.cdr.detectChanges();
       },
@@ -328,14 +303,10 @@ export class HomeComponent implements OnInit, OnDestroy {
   agregarAPlaylist(cancion: any, playlist: any, event: Event): void {
     event.stopPropagation();
 
-    this.http.post<any>(`http://localhost:8080/api/playlists/${playlist.id}/canciones/${cancion.id}`, {}).subscribe({
+    this.playlistService.agregarCancion(playlist.id, cancion.id).subscribe({
       next: (playlistActualizada) => {
-        const index = this.playlists.findIndex(p => p.id === playlist.id);
-        if (index !== -1) {
-          this.playlists[index] = playlistActualizada;
-          if (this.playlistSeleccionada?.id === playlist.id) {
-            this.playlistSeleccionada = playlistActualizada;
-          }
+        if (this.playlistSeleccionada?.id === playlist.id) {
+          this.playlistSeleccionada = playlistActualizada;
         }
         this.cancionParaPlaylist = null;
         this.cdr.detectChanges();
