@@ -35,6 +35,7 @@ export class HomeComponent implements OnInit, OnDestroy {
   cancionActual: any = null;
   reproduciendo: boolean = false;
   tiempoActual: number = 0;
+  colaReproduccion: any[] = [];
   private intervalo: any = null;
 
   // Propiedades para artistas
@@ -53,7 +54,7 @@ export class HomeComponent implements OnInit, OnDestroy {
     private cancionService: CancionService,
     private artistaService: ArtistaService,
     private historialService: HistorialService,
-    private cdr: ChangeDetectorRef,
+    public cdr: ChangeDetectorRef,
     private homeNavegacion: HomeNavegacionService
   ) { }
 
@@ -139,6 +140,51 @@ export class HomeComponent implements OnInit, OnDestroy {
 
       return coincideTexto && coincideFavorita;
     });
+  }
+
+  // Lista de canciones extraída del historial
+  get cancionesHistorial(): any[] {
+    return (this.historial || []).map(h => h.cancion).filter(c => !!c);
+  }
+
+  // Cola o lista activa de pistas que se está reproduciendo
+  get colaActiva(): any[] {
+    if (this.colaReproduccion && this.colaReproduccion.length > 0) {
+      if (this.cancionActual && this.colaReproduccion.some(c => (c.id !== undefined && c.id === this.cancionActual.id) || c === this.cancionActual)) {
+        return this.colaReproduccion;
+      }
+    }
+    if (this.viendoHistorial) {
+      return this.cancionesHistorial;
+    }
+    if (this.cancionesFiltradas && this.cancionesFiltradas.length > 0) {
+      return this.cancionesFiltradas;
+    }
+    return this.canciones;
+  }
+
+  // Índice de la canción actual dentro de la cola activa (-1 si no está)
+  get indiceActual(): number {
+    if (!this.cancionActual) return -1;
+    const lista = this.colaActiva;
+    return lista.findIndex(c => (c.id !== undefined && c.id === this.cancionActual.id) || c === this.cancionActual);
+  }
+
+  // Estado del botón Anterior (US 17):
+  // Deshabilitado si es la primera canción (índice 0) y el tiempo está en 0:00 (o índice no válido)
+  get tieneAnterior(): boolean {
+    if (!this.cancionActual) return false;
+    const idx = this.indiceActual;
+    return idx > 0 || (idx === 0 && this.tiempoActual > 0);
+  }
+
+  // Estado del botón Siguiente (US 17):
+  // Deshabilitado si es la última canción de la lista activa
+  get tieneSiguiente(): boolean {
+    if (!this.cancionActual) return false;
+    const lista = this.colaActiva;
+    const idx = this.indiceActual;
+    return idx >= 0 && idx < lista.length - 1;
   }
 
   // Cargar historial desde el backend ordenado cronológicamente
@@ -268,6 +314,9 @@ export class HomeComponent implements OnInit, OnDestroy {
             pl.canciones = pl.canciones.filter((c: any) => c.id !== cancion.id);
           }
         }
+        if (this.colaReproduccion && this.colaReproduccion.length > 0) {
+          this.colaReproduccion = this.colaReproduccion.filter((c: any) => c.id !== cancion.id);
+        }
         this.cdr.detectChanges();
       },
       error: (err) => {
@@ -349,8 +398,67 @@ export class HomeComponent implements OnInit, OnDestroy {
     return `${minutos}:${segundosFormateados}`;
   }
 
-  reproducirCancion(cancion: any): void {
+  // Inicia la reproducción de una pista cambiando metadatos y reiniciando el tiempo
+  reproducirPista(cancion: any, iniciarReproduccion: boolean): void {
     if (!cancion) return;
+
+    this.cancionActual = cancion;
+    this.tiempoActual = 0;
+    this.reproduciendo = iniciarReproduccion;
+
+    if (iniciarReproduccion && cancion.id) {
+      this.historialService.registrarReproduccion(cancion.id).subscribe({
+        next: () => this.cargarHistorial(),
+        error: (err) => console.error('Error al registrar reproducción en historial:', err)
+      });
+    }
+
+    this.gestionarReproduccion();
+    this.cdr.detectChanges();
+  }
+
+  // Botón Siguiente (US 17): avanza al siguiente elemento de la lista activa
+  siguienteCancion(): void {
+    if (!this.tieneSiguiente) return;
+    const lista = this.colaActiva;
+    const idx = this.indiceActual;
+
+    if (idx >= 0 && idx < lista.length - 1) {
+      const siguiente = lista[idx + 1];
+      const estabaActivo = this.reproduciendo;
+      this.reproducirPista(siguiente, estabaActivo);
+    }
+  }
+
+  // Botón Anterior (US 17): retrocede a la pista previa o reinicia tiempo a 0:00 si es la primera
+  anteriorCancion(): void {
+    const lista = this.colaActiva;
+    const idx = this.indiceActual;
+
+    if (idx > 0) {
+      const anterior = lista[idx - 1];
+      const estabaActivo = this.reproduciendo;
+      this.reproducirPista(anterior, estabaActivo);
+    } else if (idx === 0) {
+      this.tiempoActual = 0;
+      this.cdr.detectChanges();
+    }
+  }
+
+  reproducirCancion(cancion: any, lista?: any[]): void {
+    if (!cancion) return;
+
+    if (lista && lista.length > 0) {
+      this.colaReproduccion = [...lista];
+    } else if (!this.colaReproduccion.some(c => (c.id !== undefined && c.id === cancion.id) || c === cancion)) {
+      if (this.viendoHistorial) {
+        this.colaReproduccion = this.cancionesHistorial;
+      } else if (this.cancionesFiltradas.some(c => (c.id !== undefined && c.id === cancion.id) || c === cancion)) {
+        this.colaReproduccion = [...this.cancionesFiltradas];
+      } else {
+        this.colaReproduccion = [...this.canciones];
+      }
+    }
 
     if (this.cancionActual?.id === cancion.id) {
       this.reproduciendo = !this.reproduciendo;
