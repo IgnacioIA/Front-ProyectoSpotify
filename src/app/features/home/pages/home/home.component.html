@@ -20,7 +20,15 @@
           Historial de reproducción
         </button>
     </div>
-    <div style="font-size: 0.9rem; color: #b3b3b3;">Conectado exitosamente</div>
+    <div *ngIf="estadoCanciones === 'listo'" style="font-size: 0.9rem; color: #b3b3b3;">Conectado exitosamente</div>
+  </div>
+
+  <!-- Aviso cuando falla una operación -->
+  <div *ngIf="errorOperacion" role="alert"
+    style="display: flex; justify-content: space-between; align-items: center; gap: 12px; max-width: 900px; margin: -20px 0 30px; padding: 12px 14px; border-radius: 6px; background: #3b1519; color: #ffb3ba; font-size: 0.9rem;">
+    <span>{{ errorOperacion }}</span>
+    <button type="button" (click)="cerrarAviso()" aria-label="Cerrar aviso"
+      style="background: transparent; border: none; color: inherit; font-size: 1rem; cursor: pointer;">✕</button>
   </div>
 
   <!-- ================= VISTA DE DETALLE DE ARTISTA (Se muestra al hacer click en un artista) ================= -->
@@ -167,8 +175,13 @@
       </div>
 
       <!-- Scenario 2: si no hay canciones, devuelve una lista vacía -->
-      <div *ngIf="historial.length === 0" style="color: #b3b3b3; text-align: center; padding: 30px;">
+      <div *ngIf="historial.length === 0 && !errorHistorial" style="color: #b3b3b3; text-align: center; padding: 30px;">
         No hay canciones en el historial de reproducción.
+      </div>
+      <div *ngIf="errorHistorial" role="alert" style="color: #ffb3ba; text-align: center; padding: 30px;">
+        No se pudo cargar el historial. Verificá que el servidor esté disponible.
+        <button type="button" (click)="cargarHistorial()"
+          style="display: block; margin: 12px auto 0; background: #1DB954; color: black; border: none; padding: 8px 18px; border-radius: 18px; font-weight: bold; cursor: pointer;">Reintentar</button>
       </div>
     </div>
 
@@ -240,6 +253,18 @@
       </div>
     </section>
 
+    <!-- Si falla la carga del historial o de las playlists se avisa en lugar de ocultar la sección como si no hubiera datos -->
+    <p *ngIf="errorHistorial" role="alert" style="color: #ffb3ba; font-size: 0.9rem; margin: 0 0 20px;">
+      No se pudo cargar tu historial de reproducción.
+      <button type="button" (click)="cargarHistorial()"
+        style="background: transparent; border: none; color: white; text-decoration: underline; cursor: pointer; font-weight: bold;">Reintentar</button>
+    </p>
+    <p *ngIf="errorPlaylists" role="alert" style="color: #ffb3ba; font-size: 0.9rem; margin: 0 0 20px;">
+      No se pudieron cargar tus playlists.
+      <button type="button" (click)="cargarPlaylists()"
+        style="background: transparent; border: none; color: white; text-decoration: underline; cursor: pointer; font-weight: bold;">Reintentar</button>
+    </p>
+
     <!-- Sección de Playlists -->
     <section id="seccion-playlists" style="scroll-margin-top: 80px; margin-bottom: 30px;" *ngIf="playlists.length > 0">
       <h3 style="font-size: 1.1rem; margin-bottom: 10px; color: #b3b3b3;">Tus Playlists</h3>
@@ -298,7 +323,15 @@
 
         </div>
 
-        <div *ngIf="artistas.length === 0" style="color: #b3b3b3; padding: 20px;">
+        <div *ngIf="estadoArtistas === 'cargando'" role="status" style="color: #b3b3b3; padding: 20px;">
+          Cargando artistas...
+        </div>
+        <div *ngIf="estadoArtistas === 'error'" role="alert" style="color: #ffb3ba; padding: 20px;">
+          No se pudieron cargar los artistas. Verificá que el servidor esté disponible.
+          <button type="button" (click)="cargarArtistas()"
+            style="display: block; margin-top: 12px; background: #1DB954; color: black; border: none; padding: 8px 18px; border-radius: 18px; font-weight: bold; cursor: pointer;">Reintentar</button>
+        </div>
+        <div *ngIf="estadoArtistas === 'listo' && artistas.length === 0" style="color: #b3b3b3; padding: 20px;">
           No hay artistas disponibles.
         </div>
       </div>
@@ -380,12 +413,22 @@
 
         </div>
 
-        <div *ngIf="cancionesFiltradas.length === 0 && !filtroTexto" style="color: #b3b3b3; text-align: center; padding: 30px;">
-          No hay canciones en esta vista.
+        <div *ngIf="estadoCanciones === 'cargando' && !playlistSeleccionada" role="status" style="color: #b3b3b3; text-align: center; padding: 30px;">
+          Cargando canciones...
         </div>
-        <div *ngIf="cancionesFiltradas.length === 0 && filtroTexto" style="color: #b3b3b3; text-align: center; padding: 30px;">
-          No hay canciones que coincidan con «{{ filtroTexto }}».
+        <div *ngIf="estadoCanciones === 'error' && !playlistSeleccionada" role="alert" style="color: #ffb3ba; text-align: center; padding: 30px;">
+          No se pudieron cargar las canciones. Verificá que el servidor esté disponible.
+          <button type="button" (click)="cargarCanciones()"
+            style="display: block; margin: 12px auto 0; background: #1DB954; color: black; border: none; padding: 8px 18px; border-radius: 18px; font-weight: bold; cursor: pointer;">Reintentar</button>
         </div>
+        <ng-container *ngIf="estadoCanciones === 'listo' || playlistSeleccionada">
+          <div *ngIf="cancionesFiltradas.length === 0 && !filtroTexto" style="color: #b3b3b3; text-align: center; padding: 30px;">
+            No hay canciones en esta vista.
+          </div>
+          <div *ngIf="cancionesFiltradas.length === 0 && filtroTexto" style="color: #b3b3b3; text-align: center; padding: 30px;">
+            No hay canciones que coincidan con «{{ filtroTexto }}».
+          </div>
+        </ng-container>
       </div>
     </section>
 

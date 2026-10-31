@@ -68,6 +68,43 @@ describe('PlaylistsComponent', () => {
     expect(element.textContent).toContain('Elegí una playlist para ver sus canciones.');
   });
 
+  it('should show a loading message until the playlists arrive', () => {
+    expect(element.textContent).toContain('Cargando playlists...');
+    expect(element.textContent).not.toContain('Todavía no creaste ninguna playlist.');
+    cargar([]);
+    expect(element.textContent).not.toContain('Cargando playlists...');
+  });
+
+  it('should show a loading error instead of an empty list and allow retrying', () => {
+    http.expectOne(url).flush(null, { status: 500, statusText: 'Server Error' });
+    fixture.detectChanges();
+    expect(element.textContent).toContain('No se pudieron cargar las playlists.');
+    expect(element.textContent).not.toContain('Todavía no creaste ninguna playlist.');
+
+    boton('Reintentar').click();
+    fixture.detectChanges();
+    cargar([{ id: 1, nombre: 'Mix', canciones: [] }]);
+    expect(items().length).toBe(1);
+    expect(element.textContent).not.toContain('No se pudieron cargar las playlists.');
+  });
+
+  it('should show an understandable message when an operation fails and keep the data', () => {
+    cargar([{ id: 1, nombre: 'Mix', canciones: [] }]);
+    seleccionar(0, { id: 1, nombre: 'Mix', canciones: [] });
+
+    boton('Eliminar playlist').click();
+    http.expectOne(`${url}/1`).flush(null, { status: 500, statusText: 'Server Error' });
+    fixture.detectChanges();
+
+    expect(element.querySelector('.playlists__aviso')?.textContent).toContain('No se pudo eliminar la playlist. Intentá nuevamente.');
+    expect(items().length).toBe(1);
+    expect(boton('Eliminar playlist').disabled).toBe(false);
+
+    (element.querySelector('.playlists__aviso-cerrar') as HTMLButtonElement).click();
+    fixture.detectChanges();
+    expect(element.querySelector('.playlists__aviso')).toBeNull();
+  });
+
   it('should show an empty state when there are no playlists', () => {
     cargar([]);
     expect(element.textContent).toContain('Todavía no creaste ninguna playlist.');

@@ -7,6 +7,7 @@ import { CancionService } from '../../../songs/data-access/cancion.service';
 import { Cancion } from '../../../songs/models/cancion.model';
 import { formatearDuracion } from '../../../../shared/utils/formatear-duracion';
 import { BusquedaService, filtrarCanciones } from '../../../search/data-access/busqueda.service';
+import { EstadoCarga, mensajeError } from '../../../../shared/utils/mensaje-error';
 
 // Página de Playlists: listar, crear, seleccionar, eliminar y quitar canciones.
 // Las canciones se agregan desde el botón "+ Playlist" de las filas de Inicio.
@@ -25,6 +26,8 @@ export class PlaylistsComponent implements OnInit {
   readonly creando = signal(false);
   readonly procesando = signal(false);
   readonly errorNombre = signal(false);
+  readonly estado = signal<EstadoCarga>('cargando');
+  readonly error = signal<string | null>(null);
 
   private readonly idSeleccionado = signal<number | null>(null);
   readonly seleccionada = computed(() =>
@@ -44,8 +47,14 @@ export class PlaylistsComponent implements OnInit {
   ) { }
 
   ngOnInit(): void {
+    this.cargar();
+  }
+
+  cargar(): void {
+    this.estado.set('cargando');
     this.playlistService.cargarPlaylists().subscribe({
-      error: (err) => console.error('Error al cargar las playlists:', err)
+      next: () => this.estado.set('listo'),
+      error: () => this.estado.set('error')
     });
   }
 
@@ -57,6 +66,7 @@ export class PlaylistsComponent implements OnInit {
     if (!nombre) return;
 
     this.creando.set(true);
+    this.error.set(null);
     this.playlistService.crearPlaylist(nombre).subscribe({
       next: (playlist) => {
         this.creando.set(false);
@@ -65,7 +75,7 @@ export class PlaylistsComponent implements OnInit {
       },
       error: (err) => {
         this.creando.set(false);
-        console.error('Error al crear la playlist:', err);
+        this.error.set(mensajeError(err, 'crear la playlist'));
       }
     });
   }
@@ -74,7 +84,7 @@ export class PlaylistsComponent implements OnInit {
   seleccionar(playlist: Playlist): void {
     this.idSeleccionado.set(playlist.id);
     this.playlistService.obtenerPlaylist(playlist.id).subscribe({
-      error: (err) => console.error('Error al obtener la playlist:', err)
+      error: (err) => this.error.set(mensajeError(err, 'actualizar la playlist'))
     });
   }
 
@@ -83,6 +93,7 @@ export class PlaylistsComponent implements OnInit {
     if (this.procesando()) return;
 
     this.procesando.set(true);
+    this.error.set(null);
     this.playlistService.eliminarPlaylist(playlist.id).subscribe({
       next: () => {
         this.procesando.set(false);
@@ -92,7 +103,7 @@ export class PlaylistsComponent implements OnInit {
       },
       error: (err) => {
         this.procesando.set(false);
-        console.error('Error al eliminar la playlist:', err);
+        this.error.set(mensajeError(err, 'eliminar la playlist'));
       }
     });
   }
@@ -102,11 +113,12 @@ export class PlaylistsComponent implements OnInit {
     if (this.procesando()) return;
 
     this.procesando.set(true);
+    this.error.set(null);
     this.playlistService.quitarCancion(playlist.id, cancion.id).subscribe({
       next: () => this.procesando.set(false),
       error: (err) => {
         this.procesando.set(false);
-        console.error('Error al eliminar la canción de la playlist:', err);
+        this.error.set(mensajeError(err, 'quitar la canción de la playlist'));
       }
     });
   }
@@ -114,8 +126,12 @@ export class PlaylistsComponent implements OnInit {
   // El servicio de playlists actualiza el corazón cuando el backend confirma el cambio
   toggleFavorito(cancion: Cancion): void {
     this.cancionService.toggleFavorito(cancion.id).subscribe({
-      error: (err) => console.error('Error al actualizar favorito:', err)
+      error: (err) => this.error.set(mensajeError(err, 'actualizar el favorito'))
     });
+  }
+
+  cerrarAviso(): void {
+    this.error.set(null);
   }
 
   estaSonando(cancion: Cancion): boolean {

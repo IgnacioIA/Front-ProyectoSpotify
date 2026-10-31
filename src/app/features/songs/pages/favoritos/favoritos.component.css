@@ -148,6 +148,48 @@
   white-space: nowrap;
 }
 
+.favoritos__aviso {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 24px;
+  padding: 12px 14px;
+  border-radius: 6px;
+  background: #3b1519;
+  color: #ffb3ba;
+  font-size: 0.9rem;
+}
+
+.favoritos__aviso-cerrar {
+  flex-shrink: 0;
+  border: none;
+  background: transparent;
+  color: inherit;
+  font-size: 1rem;
+  cursor: pointer;
+}
+
+.favoritos__error-carga {
+  color: #ffb3ba;
+}
+
+.favoritos__error-carga p {
+  margin: 0 0 12px;
+}
+
+.favoritos__reintentar {
+  height: 36px;
+  padding: 0 18px;
+  border: none;
+  border-radius: 18px;
+  background: #1DB954;
+  color: #000000;
+  font: inherit;
+  font-weight: bold;
+  cursor: pointer;
+}
+
 .favoritos__vacio {
   padding: 20px 0;
   color: #b3b3b3;

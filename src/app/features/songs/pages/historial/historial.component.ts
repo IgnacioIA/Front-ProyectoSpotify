@@ -7,6 +7,7 @@ import { ReproductorService } from '../../data-access/reproductor.service';
 import { Cancion } from '../../models/cancion.model';
 import { Historial } from '../../models/historial.model';
 import { formatearDuracion } from '../../../../shared/utils/formatear-duracion';
+import { mensajeError } from '../../../../shared/utils/mensaje-error';
 
 // Página de Historial (US 9): todas las reproducciones, de la más reciente a la más antigua.
 @Component({
@@ -21,6 +22,9 @@ export class HistorialComponent implements OnInit, OnDestroy {
 
   // Signal porque el componente es OnPush. null = todavía no llegó la respuesta.
   readonly historial = signal<Historial[] | null>(null);
+  readonly errorCarga = signal(false);
+  // Aviso cuando falla una operación o una recarga con la lista ya visible
+  readonly error = signal<string | null>(null);
 
   private suscripciones = new Subscription();
 
@@ -43,9 +47,17 @@ export class HistorialComponent implements OnInit, OnDestroy {
   }
 
   cargarHistorial(): void {
+    this.errorCarga.set(false);
     this.historialService.obtenerHistorial().subscribe({
       next: (data) => this.historial.set(ordenarHistorial(data)),
-      error: (err) => console.error('Error al cargar historial desde el backend:', err)
+      error: (err) => {
+        // Sin datos previos se muestra el error en lugar de la lista; con datos, se conservan y se avisa
+        if (this.historial() === null) {
+          this.errorCarga.set(true);
+        } else {
+          this.error.set(mensajeError(err, 'actualizar el historial'));
+        }
+      }
     });
   }
 
@@ -53,9 +65,14 @@ export class HistorialComponent implements OnInit, OnDestroy {
   toggleFavorito(cancion: Cancion): void {
     if (!cancion || !cancion.id) return;
 
+    this.error.set(null);
     this.cancionService.toggleFavorito(cancion.id).subscribe({
-      error: (err) => console.error('Error al actualizar favorito:', err)
+      error: (err) => this.error.set(mensajeError(err, 'actualizar el favorito'))
     });
+  }
+
+  cerrarAviso(): void {
+    this.error.set(null);
   }
 
   estaSonando(cancion: Cancion): boolean {

@@ -7,6 +7,7 @@ import { ArtistaService } from '../../../artists/data-access/artista.service';
 import { Artista } from '../../../artists/models/artista.model';
 import { formatearDuracion } from '../../../../shared/utils/formatear-duracion';
 import { BusquedaService, filtrarCanciones } from '../../../search/data-access/busqueda.service';
+import { mensajeError } from '../../../../shared/utils/mensaje-error';
 
 // Página de Favoritos: canciones y artistas marcados con el corazón.
 // Las listas cambian solo cuando el backend confirma cada operación.
@@ -23,6 +24,10 @@ export class FavoritosComponent implements OnInit, OnDestroy {
   // null = todavía no llegó la respuesta, para no mostrar el estado vacío antes de tiempo.
   readonly canciones = signal<Cancion[] | null>(null);
   readonly artistas = signal<Artista[] | null>(null);
+  readonly errorCanciones = signal(false);
+  readonly errorArtistas = signal(false);
+  // Aviso cuando falla una operación (quitar de favoritos)
+  readonly error = signal<string | null>(null);
 
   // El buscador del header filtra las canciones (no los artistas, igual que en Inicio)
   readonly cancionesFiltradas = computed(() => filtrarCanciones(this.canciones() || [], this.busqueda.texto()));
@@ -44,15 +49,28 @@ export class FavoritosComponent implements OnInit, OnDestroy {
     // El corazón también puede cambiarse desde la barra del reproductor mientras la página está abierta
     this.suscripciones.add(this.cancionService.favoritoActualizado$.subscribe(c => this.aplicarFavorito(c)));
 
+    this.cargarCanciones();
+    this.cargarArtistas();
+  }
+
+  cargarCanciones(): void {
+    this.errorCanciones.set(false);
     this.cancionService.obtenerFavoritas().subscribe({
       next: (data) => this.canciones.set(data),
-      error: (err) => console.error('Error al cargar las canciones favoritas:', err)
+      error: () => this.errorCanciones.set(true)
     });
+  }
 
+  cargarArtistas(): void {
+    this.errorArtistas.set(false);
     this.artistaService.obtenerArtistasFavoritos().subscribe({
       next: (data) => this.artistas.set(data),
-      error: (err) => console.error('Error al cargar los artistas favoritos:', err)
+      error: () => this.errorArtistas.set(true)
     });
+  }
+
+  cerrarAviso(): void {
+    this.error.set(null);
   }
 
   ngOnDestroy(): void {
@@ -63,11 +81,12 @@ export class FavoritosComponent implements OnInit, OnDestroy {
     if (this.cancionesEnCurso().has(cancion.id)) return;
 
     this.cancionesEnCurso.update(ids => conId(ids, cancion.id));
+    this.error.set(null);
     this.cancionService.toggleFavorito(cancion.id).subscribe({
       next: () => this.cancionesEnCurso.update(ids => sinId(ids, cancion.id)),
       error: (err) => {
         this.cancionesEnCurso.update(ids => sinId(ids, cancion.id));
-        console.error('Error al actualizar favorito:', err);
+        this.error.set(mensajeError(err, 'quitar la canción de favoritos'));
       }
     });
   }
@@ -77,6 +96,7 @@ export class FavoritosComponent implements OnInit, OnDestroy {
     if (this.artistasEnCurso().has(artista.id)) return;
 
     this.artistasEnCurso.update(ids => conId(ids, artista.id));
+    this.error.set(null);
     this.artistaService.toggleFavorito(artista.id).subscribe({
       next: (actualizado) => {
         this.artistasEnCurso.update(ids => sinId(ids, artista.id));
@@ -86,7 +106,7 @@ export class FavoritosComponent implements OnInit, OnDestroy {
       },
       error: (err) => {
         this.artistasEnCurso.update(ids => sinId(ids, artista.id));
-        console.error('Error al actualizar favorito de artista:', err);
+        this.error.set(mensajeError(err, 'quitar el artista de favoritos'));
       }
     });
   }

@@ -72,8 +72,7 @@ describe('FavoritosComponent', () => {
     expect(titulos()).toEqual(['De música ligera']);
   });
 
-  it('should keep the song when the request fails', () => {
-    vi.spyOn(console, 'error').mockImplementation(() => {});
+  it('should keep the song and explain the problem when the request fails', () => {
     cargar([queen], []);
     (element.querySelector('.favoritos__cancion .favoritos__corazon') as HTMLButtonElement).click();
     http.expectOne('http://localhost:8080/api/canciones/1/favorito').flush(null, { status: 500, statusText: 'Server Error' });
@@ -81,6 +80,30 @@ describe('FavoritosComponent', () => {
 
     expect(titulos()).toEqual(['Bohemian Rhapsody']);
     expect((element.querySelector('.favoritos__cancion .favoritos__corazon') as HTMLButtonElement).disabled).toBe(false);
+    expect(element.querySelector('.favoritos__aviso')?.textContent).toContain('No se pudo quitar la canción de favoritos.');
+  });
+
+  it('should show loading messages and then loading errors instead of empty lists', () => {
+    expect(element.textContent).toContain('Cargando...');
+    http.expectOne(urlCanciones).flush(null, { status: 500, statusText: 'Server Error' });
+    http.expectOne(urlArtistas).error(new ProgressEvent('error'), { status: 0 });
+    fixture.detectChanges();
+
+    expect(element.textContent).toContain('No se pudieron cargar las canciones favoritas.');
+    expect(element.textContent).toContain('No se pudieron cargar los artistas favoritos.');
+    expect(element.textContent).not.toContain('Todavía no marcaste');
+  });
+
+  it('should retry loading the favorite songs', () => {
+    http.expectOne(urlCanciones).flush(null, { status: 500, statusText: 'Server Error' });
+    http.expectOne(urlArtistas).flush([]);
+    fixture.detectChanges();
+
+    (element.querySelector('.favoritos__reintentar') as HTMLButtonElement).click();
+    http.expectOne(urlCanciones).flush([queen]);
+    fixture.detectChanges();
+    expect(titulos()).toEqual(['Bohemian Rhapsody']);
+    expect(element.textContent).not.toContain('No se pudieron cargar las canciones favoritas.');
   });
 
   it('should follow favorite changes made from the player bar', () => {
@@ -134,7 +157,6 @@ describe('FavoritosComponent', () => {
   });
 
   it('should keep the artist when the request fails', () => {
-    vi.spyOn(console, 'error').mockImplementation(() => {});
     cargar([], [artista]);
     (element.querySelector('.favoritos__artista .favoritos__corazon') as HTMLButtonElement).click();
     http.expectOne('http://localhost:8080/api/artistas/7/favorito').flush(null, { status: 500, statusText: 'Server Error' });

@@ -51,6 +51,29 @@ describe('HistorialComponent', () => {
     expect(element.textContent).toContain('Todavía no reproduciste ninguna canción.');
   });
 
+  it('should show a loading message, then a loading error with retry instead of an empty list', () => {
+    expect(element.textContent).toContain('Cargando historial...');
+    http.expectOne(url).flush(null, { status: 500, statusText: 'Server Error' });
+    fixture.detectChanges();
+    expect(element.textContent).toContain('No se pudo cargar el historial.');
+    expect(element.textContent).not.toContain('Todavía no reproduciste');
+
+    (element.querySelector('.historial__reintentar') as HTMLButtonElement).click();
+    cargar([antigua]);
+    expect(titulos()).toEqual(['Bohemian Rhapsody']);
+  });
+
+  it('should keep the visible list and warn when a later reload fails', () => {
+    cargar([antigua]);
+    TestBed.inject(ReproductorService).reproducir(soda);
+    http.expectOne(`${url}/reproducir/2`).flush({});
+    http.expectOne(url).error(new ProgressEvent('error'), { status: 0 });
+    fixture.detectChanges();
+
+    expect(titulos()).toEqual(['Bohemian Rhapsody']);
+    expect(element.querySelector('.historial__aviso')?.textContent).toContain('No se pudo actualizar el historial: no hay conexión');
+  });
+
   it('should reload the list once the backend confirms a new playback', () => {
     cargar([antigua]);
 

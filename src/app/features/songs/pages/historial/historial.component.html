@@ -1,6 +1,13 @@
 <section class="historial">
   <h2 class="historial__titulo">Historial de reproducción</h2>
 
+  @if (error(); as error) {
+    <div class="historial__aviso" role="alert">
+      <span>{{ error }}</span>
+      <button type="button" class="historial__aviso-cerrar" aria-label="Cerrar aviso" (click)="cerrarAviso()">✕</button>
+    </div>
+  }
+
   @if (historial(); as historial) {
     <ol class="historial__lista">
       @for (item of historial; track item.id) {
@@ -34,5 +41,12 @@
         <li class="historial__vacio">Todavía no reproduciste ninguna canción. Cuando escuches una, va a aparecer acá.</li>
       }
     </ol>
+  } @else if (errorCarga()) {
+    <div class="historial__error-carga" role="alert">
+      <p>No se pudo cargar el historial. Verificá que el servidor esté disponible.</p>
+      <button type="button" class="historial__reintentar" (click)="cargarHistorial()">Reintentar</button>
+    </div>
+  } @else {
+    <p class="historial__vacio" role="status">Cargando historial...</p>
   }
 </section>

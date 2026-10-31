@@ -14,6 +14,7 @@ import { Playlist } from '../../../playlists/models/playlist.model';
 import { Subscription } from 'rxjs';
 import { AccionHome, HomeNavegacionService } from '../../data-access/home-navegacion.service';
 import { BusquedaService, filtrarCanciones } from '../../../search/data-access/busqueda.service';
+import { EstadoCarga, mensajeError } from '../../../../shared/utils/mensaje-error';
 
 @Component({
   selector: 'app-home',
@@ -49,6 +50,14 @@ export class HomeComponent implements OnInit, OnDestroy {
   // Propiedades para historial de reproducción (US 9)
   historial: Historial[] = [];
   viendoHistorial: boolean = false;
+
+  // Estados de carga: distinguen "cargando", "sin datos" y "error" para no mostrar un error como lista vacía
+  estadoCanciones: EstadoCarga = 'cargando';
+  estadoArtistas: EstadoCarga = 'cargando';
+  errorHistorial: boolean = false;
+  errorPlaylists: boolean = false;
+  // Aviso visible cuando falla una operación (crear, eliminar, agregar, favoritos)
+  errorOperacion: string | null = null;
 
   private apiUrl = 'http://localhost:8080/api/canciones';
 
@@ -87,15 +96,10 @@ export class HomeComponent implements OnInit, OnDestroy {
     this.suscripciones.add(this.cancionService.favoritoActualizado$.subscribe(c => this.aplicarFavorito(c)));
 
     // Cargar canciones desde el backend
-    this.cancionService.obtenerCanciones().subscribe({
-      next: (data) => {
-        this.canciones = data;
-        this.cdr.detectChanges();
-      }
-    });
+    this.cargarCanciones();
 
     // Cargar playlists del backend
-    this.playlistService.cargarPlaylists().subscribe();
+    this.cargarPlaylists();
 
     // Cargar artistas
     this.cargarArtistas();
@@ -134,17 +138,54 @@ export class HomeComponent implements OnInit, OnDestroy {
     );
   }
 
+  cargarCanciones(): void {
+    this.estadoCanciones = 'cargando';
+    this.cancionService.obtenerCanciones().subscribe({
+      next: (data) => {
+        this.canciones = data;
+        this.estadoCanciones = 'listo';
+        this.cdr.detectChanges();
+      },
+      error: () => {
+        this.estadoCanciones = 'error';
+        this.cdr.detectChanges();
+      }
+    });
+  }
+
+  cargarPlaylists(): void {
+    this.errorPlaylists = false;
+    this.playlistService.cargarPlaylists().subscribe({
+      error: () => {
+        this.errorPlaylists = true;
+        this.cdr.detectChanges();
+      }
+    });
+  }
+
   // Cargar historial desde el backend ordenado cronológicamente
   cargarHistorial(): void {
     this.historialService.obtenerHistorial().subscribe({
       next: (data) => {
         this.historial = ordenarHistorial(data);
+        this.errorHistorial = false;
         this.cdr.detectChanges();
       },
-      error: (err) => {
-        console.error('Error al cargar historial desde el backend:', err);
+      error: () => {
+        this.errorHistorial = true;
+        this.cdr.detectChanges();
       }
     });
+  }
+
+  cerrarAviso(): void {
+    this.errorOperacion = null;
+    this.cdr.detectChanges();
+  }
+
+  private avisarError(err: unknown, accion: string): void {
+    this.errorOperacion = mensajeError(err, accion);
+    this.cdr.detectChanges();
   }
 
   mostrarHistorial(): void {
@@ -182,7 +223,7 @@ export class HomeComponent implements OnInit, OnDestroy {
         this.cerrarModalPlaylist();
       },
       error: (err) => {
-        console.error('Error al crear la playlist:', err);
+        this.avisarError(err, 'crear la playlist');
       }
     });
   }
@@ -196,8 +237,8 @@ export class HomeComponent implements OnInit, OnDestroy {
         this.playlistSeleccionada = plActualizada;
         this.cdr.detectChanges();
       },
-      error: () => {
-        this.cdr.detectChanges();
+      error: (err) => {
+        this.avisarError(err, 'actualizar la playlist');
       }
     });
     this.cdr.detectChanges();
@@ -217,7 +258,7 @@ export class HomeComponent implements OnInit, OnDestroy {
         this.cdr.detectChanges();
       },
       error: (err) => {
-        console.error('Error al eliminar la playlist:', err);
+        this.avisarError(err, 'eliminar la playlist');
       }
     });
   }
@@ -235,7 +276,7 @@ export class HomeComponent implements OnInit, OnDestroy {
         this.cdr.detectChanges();
       },
       error: (err) => {
-        console.error('Error al eliminar la canción de la playlist:', err);
+        this.avisarError(err, 'quitar la canción de la playlist');
       }
     });
   }
@@ -286,7 +327,8 @@ export class HomeComponent implements OnInit, OnDestroy {
         this.cdr.detectChanges();
       },
       error: (err) => {
-        console.error('Error al agregar la canción a la playlist:', err);
+        this.cancionParaPlaylist = null;
+        this.avisarError(err, 'agregar la canción a la playlist');
       }
     });
   }
@@ -308,7 +350,7 @@ export class HomeComponent implements OnInit, OnDestroy {
     // Las listas se sincronizan en aplicarFavorito cuando el backend confirma el cambio
     this.cancionService.toggleFavorito(cancion.id).subscribe({
       error: (err) => {
-        console.error('Error al actualizar favorito:', err);
+        this.avisarError(err, 'actualizar el favorito');
       }
     });
   }
@@ -331,17 +373,22 @@ export class HomeComponent implements OnInit, OnDestroy {
 
   // Métodos para Artistas (US6)
   cargarArtistas(): void {
-    if (this.soloArtistasFavoritos) {
-      this.artistaService.obtenerArtistasFavoritos().subscribe(data => {
+    this.estadoArtistas = 'cargando';
+    const consulta = this.soloArtistasFavoritos
+      ? this.artistaService.obtenerArtistasFavoritos()
+      : this.artistaService.obtenerArtistas();
+
+    consulta.subscribe({
+      next: (data) => {
         this.artistas = data;
+        this.estadoArtistas = 'listo';
         this.cdr.detectChanges();
-      });
-    } else {
-      this.artistaService.obtenerArtistas().subscribe(data => {
-        this.artistas = data;
+      },
+      error: () => {
+        this.estadoArtistas = 'error';
         this.cdr.detectChanges();
-      });
-    }
+      }
+    });
   }
 
   irArtistaDesdeReproductor(cancion: any): void {
@@ -396,7 +443,7 @@ export class HomeComponent implements OnInit, OnDestroy {
         this.cdr.detectChanges();
       },
       error: (err) => {
-        console.error('Error al actualizar favorito de artista:', err);
+        this.avisarError(err, 'actualizar el artista favorito');
       }
     });
   }

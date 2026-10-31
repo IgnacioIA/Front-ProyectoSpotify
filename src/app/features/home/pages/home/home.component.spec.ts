@@ -11,6 +11,7 @@ describe('HomeComponent', () => {
   let fixture: ComponentFixture<HomeComponent>;
   let home: HomeComponent;
   let navegacion: HomeNavegacionService;
+  const urlCanciones = 'http://localhost:8080/api/canciones';
 
   beforeEach(async () => {
     // jsdom no implementa el desplazamiento de la ventana
@@ -36,11 +37,73 @@ describe('HomeComponent', () => {
   });
 
   it('should explain when no song matches the search', () => {
-    home.canciones = [{ id: 1, titulo: 'Bohemian Rhapsody', artista: { id: 1, nombre: 'Queen' } }];
+    TestBed.inject(HttpTestingController).expectOne(urlCanciones)
+      .flush([{ id: 1, titulo: 'Bohemian Rhapsody', artista: { id: 1, nombre: 'Queen' } }]);
     TestBed.inject(BusquedaService).texto.set('zzz');
     fixture.detectChanges();
     expect(fixture.nativeElement.textContent).toContain('No hay canciones que coincidan con «zzz».');
     expect(fixture.nativeElement.textContent).not.toContain('No hay canciones en esta vista.');
+  });
+
+  describe('loading and error states', () => {
+    const texto = () => (fixture.nativeElement as HTMLElement).textContent!;
+    const fallar = (url: string) =>
+      TestBed.inject(HttpTestingController).expectOne(url).flush(null, { status: 500, statusText: 'Server Error' });
+
+    it('should show loading messages until the songs and artists arrive', () => {
+      expect(texto()).toContain('Cargando canciones...');
+      expect(texto()).toContain('Cargando artistas...');
+      expect(texto()).not.toContain('No hay canciones en esta vista.');
+      expect(texto()).not.toContain('Conectado exitosamente');
+
+      const http = TestBed.inject(HttpTestingController);
+      http.expectOne(urlCanciones).flush([]);
+      http.expectOne('http://localhost:8080/api/artistas').flush([]);
+      fixture.detectChanges();
+      expect(texto()).toContain('No hay canciones en esta vista.');
+      expect(texto()).toContain('No hay artistas disponibles.');
+      expect(texto()).toContain('Conectado exitosamente');
+    });
+
+    it('should show a loading error instead of an empty list and allow retrying', () => {
+      fallar(urlCanciones);
+      fallar('http://localhost:8080/api/artistas');
+      fixture.detectChanges();
+      expect(texto()).toContain('No se pudieron cargar las canciones.');
+      expect(texto()).toContain('No se pudieron cargar los artistas.');
+      expect(texto()).not.toContain('No hay canciones en esta vista.');
+      expect(texto()).not.toContain('No hay artistas disponibles.');
+      expect(texto()).not.toContain('Conectado exitosamente');
+
+      const reintentar = Array.from((fixture.nativeElement as HTMLElement).querySelectorAll('button'))
+        .find((b) => b.closest('#seccion-canciones') && b.textContent?.trim() === 'Reintentar') as HTMLButtonElement;
+      reintentar.click();
+      TestBed.inject(HttpTestingController).expectOne(urlCanciones).flush([{ id: 1, titulo: 'Bohemian Rhapsody' }]);
+      fixture.detectChanges();
+      expect(texto()).toContain('Bohemian Rhapsody');
+      expect(texto()).not.toContain('No se pudieron cargar las canciones.');
+    });
+
+    it('should warn when the history or the playlists cannot be loaded instead of hiding them silently', () => {
+      fallar('http://localhost:8080/api/historial');
+      fallar('http://localhost:8080/api/playlists');
+      fixture.detectChanges();
+      expect(texto()).toContain('No se pudo cargar tu historial de reproducción.');
+      expect(texto()).toContain('No se pudieron cargar tus playlists.');
+    });
+
+    it('should show an understandable message when an operation fails', () => {
+      home.nombreNuevaPlaylist = 'Mix';
+      home.crearPlaylist();
+      TestBed.inject(HttpTestingController).expectOne((r) => r.method === 'POST' && r.url === 'http://localhost:8080/api/playlists')
+        .error(new ProgressEvent('error'), { status: 0 });
+      fixture.detectChanges();
+
+      const aviso = (fixture.nativeElement as HTMLElement).querySelector('[role=alert]');
+      expect(aviso?.textContent).toContain('No se pudo crear la playlist: no hay conexión con el servidor.');
+      (aviso!.querySelector('button') as HTMLButtonElement).click();
+      expect(home.errorOperacion).toBeNull();
+    });
   });
 
   it('should return to the main view when "Inicio" is chosen while already in Home', () => {

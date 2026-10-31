@@ -1,6 +1,13 @@
 <section class="favoritos">
   <h2 class="favoritos__titulo">Tus Favoritos</h2>
 
+  @if (error(); as error) {
+    <div class="favoritos__aviso" role="alert">
+      <span>{{ error }}</span>
+      <button type="button" class="favoritos__aviso-cerrar" aria-label="Cerrar aviso" (click)="cerrarAviso()">✕</button>
+    </div>
+  }
+
   <!-- Canciones favoritas -->
   <section class="favoritos__seccion" aria-labelledby="favoritos-canciones">
     <h3 id="favoritos-canciones" class="favoritos__subtitulo">Canciones</h3>
@@ -39,6 +46,13 @@
           }
         }
       </ul>
+    } @else if (errorCanciones()) {
+      <div class="favoritos__error-carga" role="alert">
+        <p>No se pudieron cargar las canciones favoritas. Verificá que el servidor esté disponible.</p>
+        <button type="button" class="favoritos__reintentar" (click)="cargarCanciones()">Reintentar</button>
+      </div>
+    } @else {
+      <p class="favoritos__vacio" role="status">Cargando...</p>
     }
   </section>
 
@@ -71,6 +85,13 @@
           <li class="favoritos__vacio">Todavía no marcaste artistas como favoritos. Podés hacerlo desde Inicio.</li>
         }
       </ul>
+    } @else if (errorArtistas()) {
+      <div class="favoritos__error-carga" role="alert">
+        <p>No se pudieron cargar los artistas favoritos. Verificá que el servidor esté disponible.</p>
+        <button type="button" class="favoritos__reintentar" (click)="cargarArtistas()">Reintentar</button>
+      </div>
+    } @else {
+      <p class="favoritos__vacio" role="status">Cargando...</p>
     }
   </section>
 </section>

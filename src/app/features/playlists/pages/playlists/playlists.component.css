@@ -249,6 +249,36 @@
   cursor: default;
 }
 
+.playlists__aviso {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 12px;
+  margin: -8px 0 20px;
+  padding: 12px 14px;
+  border-radius: 6px;
+  background: #3b1519;
+  color: #ffb3ba;
+  font-size: 0.9rem;
+}
+
+.playlists__aviso-cerrar {
+  flex-shrink: 0;
+  border: none;
+  background: transparent;
+  color: inherit;
+  font-size: 1rem;
+  cursor: pointer;
+}
+
+.playlists__error-carga {
+  color: #ffb3ba;
+}
+
+.playlists__error-carga p {
+  margin: 0 0 12px;
+}
+
 .playlists__vacio {
   margin: 0;
   padding: 20px 0;

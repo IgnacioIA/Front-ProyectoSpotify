@@ -20,22 +20,37 @@
   @if (errorNombre()) {
     <p class="playlists__error" role="alert">Ingresá un nombre para la playlist.</p>
   }
+  @if (error(); as error) {
+    <div class="playlists__aviso" role="alert">
+      <span>{{ error }}</span>
+      <button type="button" class="playlists__aviso-cerrar" aria-label="Cerrar aviso" (click)="cerrarAviso()">✕</button>
+    </div>
+  }
 
   <div class="playlists__contenido">
     <!-- Listado -->
-    <nav class="playlists__lista" aria-label="Playlists">
-      @for (playlist of playlistService.playlists(); track playlist.id) {
-        <button
-          type="button"
-          class="playlists__item"
-          [class.playlists__item--activa]="seleccionada()?.id === playlist.id"
-          [attr.aria-pressed]="seleccionada()?.id === playlist.id"
-          (click)="seleccionar(playlist)">
-          <span class="playlists__item-nombre">📁 {{ playlist.nombre }}</span>
-          <span class="playlists__item-cantidad">{{ playlist.canciones?.length || 0 }}</span>
-        </button>
-      } @empty {
-        <p class="playlists__vacio">Todavía no creaste ninguna playlist.</p>
+    <nav class="playlists__lista" aria-label="Playlists" [attr.aria-busy]="estado() === 'cargando'">
+      @if (estado() === 'cargando' && playlistService.playlists().length === 0) {
+        <p class="playlists__vacio" role="status">Cargando playlists...</p>
+      } @else if (estado() === 'error') {
+        <div class="playlists__error-carga" role="alert">
+          <p>No se pudieron cargar las playlists. Verificá que el servidor esté disponible.</p>
+          <button type="button" class="playlists__boton" (click)="cargar()">Reintentar</button>
+        </div>
+      } @else {
+        @for (playlist of playlistService.playlists(); track playlist.id) {
+          <button
+            type="button"
+            class="playlists__item"
+            [class.playlists__item--activa]="seleccionada()?.id === playlist.id"
+            [attr.aria-pressed]="seleccionada()?.id === playlist.id"
+            (click)="seleccionar(playlist)">
+            <span class="playlists__item-nombre">📁 {{ playlist.nombre }}</span>
+            <span class="playlists__item-cantidad">{{ playlist.canciones?.length || 0 }}</span>
+          </button>
+        } @empty {
+          <p class="playlists__vacio">Todavía no creaste ninguna playlist.</p>
+        }
       }
     </nav>
 
@@ -94,7 +109,7 @@
             }
           }
         </ul>
-      } @else if (playlistService.playlists().length > 0) {
+      } @else if (estado() === 'listo' && playlistService.playlists().length > 0) {
         <p class="playlists__vacio">Elegí una playlist para ver sus canciones.</p>
       }
     </div>
