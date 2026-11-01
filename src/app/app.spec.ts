@@ -207,6 +207,26 @@ describe('AppComponent', () => {
       }
     });
 
+    it('should keep the queue and the next/previous buttons working after changing page (US 17)', async () => {
+      const fixture = TestBed.createComponent(AppComponent);
+      const router = TestBed.inject(Router);
+      const reproductor = TestBed.inject(ReproductorService);
+      const otra: Cancion = { id: 2, titulo: 'De música ligera', genero: 'Rock', duracion: 210, artista: { id: 9, nombre: 'Soda Stereo' } };
+      await router.navigateByUrl('/favoritos');
+      reproductor.reproducir(cancion, [cancion, otra]);
+      fixture.detectChanges();
+
+      await router.navigateByUrl('/historial');
+      fixture.detectChanges();
+      (barra(fixture).querySelector('#btn-siguiente') as HTMLButtonElement).click();
+      fixture.detectChanges();
+
+      expect(reproductor.cancionActual()?.id).toBe(2);
+      expect(barra(fixture).querySelector('#player-cancion-titulo')?.textContent).toContain('De música ligera');
+      expect((barra(fixture).querySelector('#btn-siguiente') as HTMLButtonElement).disabled).toBe(true);
+      expect((barra(fixture).querySelector('#btn-anterior') as HTMLButtonElement).disabled).toBe(false);
+    });
+
     it('should open the artist detail in Home from the bar without stopping the song', async () => {
       const fixture = TestBed.createComponent(AppComponent);
       const router = TestBed.inject(Router);

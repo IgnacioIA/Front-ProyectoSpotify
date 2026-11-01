@@ -115,7 +115,10 @@ export class PlaylistsComponent implements OnInit {
     this.procesando.set(true);
     this.error.set(null);
     this.playlistService.quitarCancion(playlist.id, cancion.id).subscribe({
-      next: () => this.procesando.set(false),
+      next: () => {
+        this.procesando.set(false);
+        this.reproductor.quitarDeCola(cancion.id);
+      },
       error: (err) => {
         this.procesando.set(false);
         this.error.set(mensajeError(err, 'quitar la canción de la playlist'));

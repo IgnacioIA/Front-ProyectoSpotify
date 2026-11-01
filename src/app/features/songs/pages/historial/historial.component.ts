@@ -1,4 +1,4 @@
-import { Component, OnDestroy, OnInit, signal } from '@angular/core';
+import { Component, OnDestroy, OnInit, computed, signal } from '@angular/core';
 import { DatePipe } from '@angular/common';
 import { Subscription } from 'rxjs';
 import { CancionService } from '../../data-access/cancion.service';
@@ -25,6 +25,11 @@ export class HistorialComponent implements OnInit, OnDestroy {
   readonly errorCarga = signal(false);
   // Aviso cuando falla una operación o una recarga con la lista ya visible
   readonly error = signal<string | null>(null);
+
+  // Canciones del historial en el orden mostrado: es la cola al reproducir desde esta página (US 17)
+  readonly cancionesHistorial = computed(() =>
+    (this.historial() || []).map(item => item.cancion).filter(cancion => !!cancion)
+  );
 
   private suscripciones = new Subscription();
 

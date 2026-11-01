@@ -16,7 +16,7 @@
             type="button"
             class="historial__play"
             [attr.aria-label]="(estaSonando(item.cancion) ? 'Pausar ' : 'Reproducir ') + item.cancion?.titulo"
-            (click)="reproductor.reproducir(item.cancion)">
+            (click)="reproductor.reproducir(item.cancion, cancionesHistorial())">
             {{ estaSonando(item.cancion) ? '❚❚' : '▶' }}
           </button>
           <div class="historial__datos">

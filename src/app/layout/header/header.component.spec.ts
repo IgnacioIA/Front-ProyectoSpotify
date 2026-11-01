@@ -3,6 +3,7 @@ import { provideHttpClient } from '@angular/common/http';
 import { HttpTestingController, provideHttpClientTesting } from '@angular/common/http/testing';
 import { provideRouter, Router } from '@angular/router';
 import { AuthService } from '../../features/users/data-access/auth.service';
+import { BusquedaService } from '../../features/search/data-access/busqueda.service';
 import { HeaderComponent } from './header.component';
 
 describe('HeaderComponent', () => {
@@ -89,7 +90,7 @@ describe('HeaderComponent', () => {
     fixture.componentInstance.filtroTextoChange.subscribe((texto) => emitidos.push(texto));
 
     const input = element.querySelector('input') as HTMLInputElement;
-    expect(input.getAttribute('aria-label')).toBe('Buscar canción o artista');
+    expect(input.getAttribute('aria-label')).toBe('Buscar canción, artista o género');
     input.value = 'queen';
     input.dispatchEvent(new Event('input'));
 
@@ -101,6 +102,123 @@ describe('HeaderComponent', () => {
     fixture.detectChanges();
     await fixture.whenStable();
     expect((element.querySelector('input') as HTMLInputElement).value).toBe('rock');
+  });
+
+  function escribir(texto: string): HTMLInputElement {
+    const input = element.querySelector('input') as HTMLInputElement;
+    input.value = texto;
+    return input;
+  }
+
+  it('should open the results page with Enter', () => {
+    const navegar = vi.spyOn(TestBed.inject(Router), 'navigate');
+    escribir('  soda stereo ').dispatchEvent(new KeyboardEvent('keydown', { key: 'Enter' }));
+    expect(navegar).toHaveBeenCalledWith(['/buscar'], { queryParams: { q: 'soda stereo' } });
+  });
+
+  it('should open the results page with the search icon', () => {
+    const navegar = vi.spyOn(TestBed.inject(Router), 'navigate');
+    escribir('rock');
+    (element.querySelector('.header__buscar') as HTMLButtonElement).click();
+    expect(navegar).toHaveBeenCalledWith(['/buscar'], { queryParams: { q: 'rock' } });
+  });
+
+  it('should not search with an empty text', () => {
+    const navegar = vi.spyOn(TestBed.inject(Router), 'navigate');
+    escribir('   ').dispatchEvent(new KeyboardEvent('keydown', { key: 'Enter' }));
+    expect(navegar).not.toHaveBeenCalled();
+  });
+
+  describe('automatic search', () => {
+    function teclear(texto: string): void {
+      const input = escribir(texto);
+      input.dispatchEvent(new Event('input'));
+    }
+
+    function enLaRuta(url: string) {
+      const router = TestBed.inject(Router);
+      vi.spyOn(router, 'url', 'get').mockReturnValue(url);
+      return {
+        navigate: vi.spyOn(router, 'navigate').mockResolvedValue(true),
+        navigateByUrl: vi.spyOn(router, 'navigateByUrl').mockResolvedValue(true),
+      };
+    }
+
+    beforeEach(() => vi.useFakeTimers());
+    afterEach(() => vi.useRealTimers());
+
+    it('should search only after a 350 ms pause', () => {
+      const { navigate } = enLaRuta('/favoritos');
+      teclear('ma');
+      vi.advanceTimersByTime(349);
+      expect(navigate).not.toHaveBeenCalled();
+
+      teclear('marea');
+      vi.advanceTimersByTime(349);
+      expect(navigate).not.toHaveBeenCalled();
+      vi.advanceTimersByTime(1);
+      expect(navigate).toHaveBeenCalledTimes(1);
+      expect(navigate).toHaveBeenCalledWith(['/buscar'], { queryParams: { q: 'marea' } });
+    });
+
+    it('should cancel the pending search when Enter is pressed', () => {
+      const { navigate } = enLaRuta('/favoritos');
+      teclear('marea');
+      escribir('marea').dispatchEvent(new KeyboardEvent('keydown', { key: 'Enter' }));
+      vi.advanceTimersByTime(350);
+      expect(navigate).toHaveBeenCalledTimes(1);
+    });
+
+    it('should remember the route where the search started', () => {
+      enLaRuta('/playlists');
+      teclear('marea');
+      vi.advanceTimersByTime(350);
+      expect(TestBed.inject(BusquedaService).origen).toBe('/playlists');
+    });
+
+    it('should replace the URL and keep the origin when the term changes in the results', () => {
+      TestBed.inject(BusquedaService).origen = '/historial';
+      const { navigate } = enLaRuta('/buscar?q=marea');
+      teclear('marea baja');
+      vi.advanceTimersByTime(350);
+      expect(navigate).toHaveBeenCalledWith(['/buscar'], {
+        queryParams: { q: 'marea baja' },
+        replaceUrl: true,
+      });
+      expect(TestBed.inject(BusquedaService).origen).toBe('/historial');
+    });
+
+    it('should not navigate again when the term did not change', () => {
+      const { navigate } = enLaRuta('/buscar?q=marea');
+      teclear('marea ');
+      vi.advanceTimersByTime(350);
+      escribir('marea').dispatchEvent(new KeyboardEvent('keydown', { key: 'Enter' }));
+      expect(navigate).not.toHaveBeenCalled();
+    });
+
+    it('should go back to the origin when the text is cleared', () => {
+      TestBed.inject(BusquedaService).origen = '/favoritos';
+      const { navigateByUrl } = enLaRuta('/buscar?q=marea');
+      teclear('');
+      vi.advanceTimersByTime(350);
+      expect(navigateByUrl).toHaveBeenCalledWith('/favoritos', { replaceUrl: true });
+    });
+
+    it('should go to Home when there is no origin', () => {
+      const { navigateByUrl } = enLaRuta('/buscar?q=marea');
+      teclear('');
+      vi.advanceTimersByTime(350);
+      expect(navigateByUrl).toHaveBeenCalledWith('/', { replaceUrl: true });
+    });
+
+    it('should stay on the page when the text is cleared outside the results', () => {
+      const { navigate, navigateByUrl } = enLaRuta('/favoritos');
+      teclear('m');
+      teclear('');
+      vi.advanceTimersByTime(350);
+      expect(navigate).not.toHaveBeenCalled();
+      expect(navigateByUrl).not.toHaveBeenCalled();
+    });
   });
 
   it('should notify when the title is activated', () => {

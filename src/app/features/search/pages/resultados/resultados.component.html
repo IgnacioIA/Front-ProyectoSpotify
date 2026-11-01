@@ -1,0 +1,71 @@
+<section class="favoritos">
+  @if (termino()) {
+    <h2 class="favoritos__titulo">Resultados para «{{ termino() }}»</h2>
+  } @else {
+    <h2 class="favoritos__titulo">Buscar</h2>
+  }
+
+  @if (!termino()) {
+    <p class="favoritos__vacio">Escribí una canción, un artista o un género en la barra de búsqueda.</p>
+  } @else if (estado() === 'cargando') {
+    <p class="favoritos__vacio" role="status">Buscando...</p>
+  } @else if (estado() === 'error') {
+    <div class="favoritos__error-carga" role="alert">
+      <p>{{ error() }}</p>
+      <button type="button" class="favoritos__reintentar" (click)="cargar()">Reintentar</button>
+    </div>
+  } @else if (sinResultados()) {
+    <p class="favoritos__vacio" role="status">No encontramos resultados para tu búsqueda</p>
+  } @else {
+    @if (canciones().length > 0) {
+      <section class="favoritos__seccion" aria-labelledby="resultados-canciones">
+        <h3 id="resultados-canciones" class="favoritos__subtitulo">Canciones</h3>
+
+        <ul class="favoritos__canciones">
+          @for (cancion of canciones(); track cancion.id) {
+            <li class="favoritos__cancion">
+              <button
+                type="button"
+                class="favoritos__play"
+                [attr.aria-label]="(estaSonando(cancion) ? 'Pausar ' : 'Reproducir ') + cancion.titulo"
+                (click)="reproductor.reproducir(cancion, canciones())">
+                {{ estaSonando(cancion) ? '❚❚' : '▶' }}
+              </button>
+              <div class="favoritos__cancion-datos">
+                <div class="favoritos__cancion-titulo">{{ cancion.titulo }}</div>
+                <div class="favoritos__cancion-artista">{{ cancion.artista?.nombre }}</div>
+              </div>
+              @if (cancion.genero) {
+                <span class="favoritos__genero">{{ cancion.genero }}</span>
+              }
+              <span class="favoritos__duracion">{{ formatearDuracion(cancion.duracion) }}</span>
+            </li>
+          }
+        </ul>
+      </section>
+    }
+
+    @if (artistas().length > 0) {
+      <section class="favoritos__seccion" aria-labelledby="resultados-artistas">
+        <h3 id="resultados-artistas" class="favoritos__subtitulo">Artistas</h3>
+
+        <ul class="favoritos__artistas">
+          @for (artista of artistas(); track artista.id) {
+            <li class="favoritos__artista">
+              <button type="button" class="resultados__artista" (click)="abrirArtista(artista)">
+                <div class="favoritos__portada">
+                  @if (artista.portada) {
+                    <img [src]="artista.portada" [alt]="artista.nombre">
+                  } @else {
+                    <span aria-hidden="true">🎤</span>
+                  }
+                </div>
+                <div class="favoritos__artista-nombre">{{ artista.nombre }}</div>
+              </button>
+            </li>
+          }
+        </ul>
+      </section>
+    }
+  }
+</section>

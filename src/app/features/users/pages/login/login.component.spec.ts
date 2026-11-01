@@ -13,6 +13,8 @@ describe('LoginComponent', () => {
   const url = 'http://localhost:8080/api/auth/login';
 
   beforeEach(async () => {
+    // La sesión se persiste: sin esto, el login de un test se restaura en el siguiente
+    localStorage.removeItem('usuario_spotify');
     await TestBed.configureTestingModule({
       imports: [LoginComponent],
       providers: [provideRouter([]), provideHttpClient(), provideHttpClientTesting()],
@@ -75,6 +77,20 @@ describe('LoginComponent', () => {
     expect(element.querySelector('[role=alert]')?.textContent).toContain('Usuario, correo o contraseña incorrectos.');
     expect((element.querySelector('button[type=submit]') as HTMLButtonElement).disabled).toBe(false);
     expect(TestBed.inject(AuthService).estaAutenticado()).toBe(false);
+  });
+
+  it('should show the backend message and keep no session when the account is not verified', async () => {
+    await completar('ana', 'secreta');
+    enviar();
+    http
+      .expectOne(url)
+      .flush({ mensaje: 'Debés verificar tu cuenta antes de iniciar sesión.' }, { status: 403, statusText: 'Forbidden' });
+    fixture.detectChanges();
+
+    expect(element.querySelector('[role=alert]')?.textContent).toContain('Debés verificar tu cuenta antes de iniciar sesión.');
+    expect((element.querySelector('button[type=submit]') as HTMLButtonElement).disabled).toBe(false);
+    expect(TestBed.inject(AuthService).estaAutenticado()).toBe(false);
+    expect(localStorage.getItem('usuario_spotify')).toBeNull();
   });
 
   it('should explain when the server cannot be reached', async () => {

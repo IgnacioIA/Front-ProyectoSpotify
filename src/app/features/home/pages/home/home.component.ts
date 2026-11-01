@@ -163,6 +163,11 @@ export class HomeComponent implements OnInit, OnDestroy {
     });
   }
 
+  // Lista de canciones extraída del historial
+  get cancionesHistorial(): any[] {
+    return (this.historial || []).map(h => h.cancion).filter(c => !!c);
+  }
+
   // Cargar historial desde el backend ordenado cronológicamente
   cargarHistorial(): void {
     this.historialService.obtenerHistorial().subscribe({
@@ -273,6 +278,7 @@ export class HomeComponent implements OnInit, OnDestroy {
         if (playlistActualizada && this.playlistSeleccionada?.id === playlist.id) {
           this.playlistSeleccionada = playlistActualizada;
         }
+        this.reproductor.quitarDeCola(cancion.id);
         this.cdr.detectChanges();
       },
       error: (err) => {
@@ -337,9 +343,10 @@ export class HomeComponent implements OnInit, OnDestroy {
     return formatearDuracion(segundos);
   }
 
-  // El estado de reproducción vive en ReproductorService para persistir entre rutas
-  reproducirCancion(cancion: any): void {
-    this.reproductor.reproducir(cancion);
+  // El estado de reproducción vive en ReproductorService para persistir entre rutas.
+  // `lista` es la lista visible desde la que se reproduce y pasa a ser la cola (US 17).
+  reproducirCancion(cancion: any, lista?: any[]): void {
+    this.reproductor.reproducir(cancion, lista);
   }
 
   // Alternar favorito y eliminar de favoritos (US 10)

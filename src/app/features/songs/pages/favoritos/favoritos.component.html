@@ -20,7 +20,7 @@
               type="button"
               class="favoritos__play"
               [attr.aria-label]="(estaSonando(cancion) ? 'Pausar ' : 'Reproducir ') + cancion.titulo"
-              (click)="reproductor.reproducir(cancion)">
+              (click)="reproductor.reproducir(cancion, cancionesFiltradas())">
               {{ estaSonando(cancion) ? '❚❚' : '▶' }}
             </button>
             <div class="favoritos__cancion-datos">

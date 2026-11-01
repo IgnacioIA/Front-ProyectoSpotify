@@ -167,6 +167,23 @@ describe('PlaylistsComponent', () => {
     expect(element.textContent).not.toContain('todavía no tiene canciones');
   });
 
+  it('should use the selected playlist as the queue and drop removed songs from it (US 17)', () => {
+    const soda = { id: 6, titulo: 'De música ligera', genero: 'Rock', duracion: 210, artista: { id: 2, nombre: 'Soda Stereo' } };
+    cargar([{ id: 1, nombre: 'Mix', canciones: [cancion, soda] }]);
+    seleccionar(0, { id: 1, nombre: 'Mix', canciones: [cancion, soda] });
+    const reproductor = TestBed.inject(ReproductorService);
+
+    (element.querySelector('.playlists__play') as HTMLButtonElement).click();
+    http.expectOne('http://localhost:8080/api/historial/reproducir/5').flush({});
+    expect(reproductor.colaReproduccion().map((c) => c.id)).toEqual([5, 6]);
+
+    const quitar = Array.from(element.querySelectorAll('button')).filter((b) => b.textContent?.trim() === 'Eliminar de la Playlist')[1];
+    quitar.click();
+    http.expectOne(`${url}/1/canciones/6`).flush({ id: 1, nombre: 'Mix', canciones: [cancion] });
+    expect(reproductor.colaReproduccion().map((c) => c.id)).toEqual([5]);
+    expect(reproductor.tieneSiguiente()).toBe(false);
+  });
+
   it('should remove a song from the selected playlist', () => {
     cargar([{ id: 1, nombre: 'Mix', canciones: [cancion] }]);
     seleccionar(0, { id: 1, nombre: 'Mix', canciones: [cancion] });

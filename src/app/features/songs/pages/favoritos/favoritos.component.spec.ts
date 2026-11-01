@@ -137,6 +137,19 @@ describe('FavoritosComponent', () => {
     expect(element.textContent).not.toContain('Todavía no marcaste canciones');
   });
 
+  it('should use the visible favorite songs as the queue (US 17)', () => {
+    const tercera = { id: 3, titulo: 'Track ligera', genero: 'Pop', duracion: 100, favorito: true };
+    cargar([queen, soda, tercera], []);
+    TestBed.inject(BusquedaService).texto.set('ligera');
+    fixture.detectChanges();
+
+    (element.querySelector('.favoritos__play') as HTMLButtonElement).click();
+    http.expectOne('http://localhost:8080/api/historial/reproducir/2').flush({});
+    const reproductor = TestBed.inject(ReproductorService);
+    expect(reproductor.colaReproduccion().map((c) => c.id)).toEqual([2, 3]);
+    expect(reproductor.tieneSiguiente()).toBe(true);
+  });
+
   it('should play a favorite song with the shared player', () => {
     cargar([queen], []);
     (element.querySelector('.favoritos__play') as HTMLButtonElement).click();

@@ -1,0 +1,13 @@
+/* El resto de los estilos se comparte con la página de Favoritos */
+.resultados__artista {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  width: 100%;
+  padding: 0;
+  border: none;
+  background: transparent;
+  color: inherit;
+  font: inherit;
+  cursor: pointer;
+}

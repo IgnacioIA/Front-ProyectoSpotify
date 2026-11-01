@@ -21,20 +21,24 @@
     </h1>
   </div>
 
-  <!-- Centro: buscador de canciones -->
+  <!-- Centro: buscador global -->
   <div class="header__buscador" role="search">
-    <svg class="header__lupa" viewBox="0 0 24 24" aria-hidden="true">
-      <circle cx="11" cy="11" r="7" />
-      <line x1="16.5" y1="16.5" x2="21" y2="21" />
-    </svg>
+    <button type="button" class="header__buscar" aria-label="Buscar" (click)="buscar(campo.value)">
+      <svg class="header__lupa" viewBox="0 0 24 24" aria-hidden="true">
+        <circle cx="11" cy="11" r="7" />
+        <line x1="16.5" y1="16.5" x2="21" y2="21" />
+      </svg>
+    </button>
     <input
+      #campo
       type="search"
       class="header__input"
-      aria-label="Buscar canción o artista"
-      placeholder="Buscar canción o artista..."
+      aria-label="Buscar canción, artista o género"
+      placeholder="Buscar canción, artista o género..."
       autocomplete="off"
       [ngModel]="filtroTexto"
-      (ngModelChange)="filtroTextoChange.emit($event)">
+      (ngModelChange)="alEscribir($event)"
+      (keydown.enter)="buscar(campo.value)">
   </div>
 
   <!-- Derecha: acceso de usuario según el estado de AuthService -->

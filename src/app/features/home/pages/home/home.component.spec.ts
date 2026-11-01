@@ -166,4 +166,74 @@ describe('HomeComponent', () => {
     fixture.detectChanges();
     expect(element.querySelector('#seccion-playlists')?.textContent).toContain('Mix');
   });
+
+  // US 17: la navegación vive en ReproductorService y la barra persistente (ver sus specs).
+  // Home solo inicia la reproducción pasando la lista que está mostrando.
+  describe('US 17 - Home inicia la reproducción con la lista visible', () => {
+    const listaMock = [
+      { id: 101, titulo: 'Track 1', duracion: 180, artista: { id: 1, nombre: 'Artista A' } },
+      { id: 102, titulo: 'Track 2', duracion: 210, artista: { id: 2, nombre: 'Artista B' } },
+      { id: 103, titulo: 'Otra', duracion: 240, artista: { id: 3, nombre: 'Artista C' } },
+    ];
+
+    let reproductor: ReproductorService;
+    const idsCola = () => reproductor.colaReproduccion().map((c) => c.id);
+
+    beforeEach(() => {
+      reproductor = TestBed.inject(ReproductorService);
+      TestBed.inject(HttpTestingController).expectOne(urlCanciones).flush(listaMock);
+      fixture.detectChanges();
+    });
+
+    function playDe(selector: string, indice: number): HTMLButtonElement {
+      const filas = (fixture.nativeElement as HTMLElement).querySelectorAll(`${selector} > div > div[style*="position: relative"]`);
+      return filas[indice].querySelector('button') as HTMLButtonElement;
+    }
+
+    it('should use the displayed songs as the queue when playing from the main list', () => {
+      playDe('#seccion-canciones', 1).click();
+      expect(reproductor.cancionActual()?.id).toBe(102);
+      expect(idsCola()).toEqual([101, 102, 103]);
+      expect(reproductor.indiceActual()).toBe(1);
+    });
+
+    it('should not include songs hidden by the search in the queue', () => {
+      TestBed.inject(BusquedaService).texto.set('track');
+      fixture.detectChanges();
+
+      playDe('#seccion-canciones', 0).click();
+      expect(idsCola()).toEqual([101, 102]);
+      expect(reproductor.tieneSiguiente()).toBe(true);
+    });
+
+    it('should use the history songs as the queue when playing from the history section', () => {
+      TestBed.inject(HttpTestingController).expectOne('http://localhost:8080/api/historial').flush([
+        { id: 2, cancion: listaMock[2], fechaReproduccion: '2026-10-31T10:00:00' },
+        { id: 1, cancion: listaMock[0], fechaReproduccion: '2026-10-30T10:00:00' },
+      ]);
+      fixture.detectChanges();
+
+      home.reproducirCancion(listaMock[0], home.cancionesHistorial);
+      expect(idsCola()).toEqual([103, 101]);
+      expect(reproductor.tieneSiguiente()).toBe(false);
+      expect(reproductor.tieneAnterior()).toBe(true);
+    });
+
+    it('should remove a song taken out of the selected playlist from the queue', () => {
+      home.reproducirCancion(listaMock[0], listaMock);
+      home.playlistSeleccionada = { id: 9, nombre: 'Mix', canciones: listaMock };
+
+      home.eliminarCancionDePlaylist(listaMock[1], home.playlistSeleccionada, new Event('click'));
+      TestBed.inject(HttpTestingController).expectOne('http://localhost:8080/api/playlists/9/canciones/102')
+        .flush({ id: 9, nombre: 'Mix', canciones: [listaMock[0], listaMock[2]] });
+
+      expect(idsCola()).toEqual([101, 103]);
+    });
+
+    it('should not render its own player: the controls live in the persistent bar', () => {
+      home.reproducirCancion(listaMock[0], listaMock);
+      fixture.detectChanges();
+      expect((fixture.nativeElement as HTMLElement).querySelector('#btn-siguiente')).toBeNull();
+    });
+  });
 });

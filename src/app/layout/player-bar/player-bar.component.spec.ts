@@ -50,7 +50,7 @@ describe('PlayerBarComponent', () => {
     expect(element.textContent).toContain('Queen');
     expect(element.textContent).toContain('5:54');
 
-    const [, playPausa] = botones();
+    const playPausa = element.querySelector('#btn-play-pause') as HTMLButtonElement;
     expect(playPausa.textContent?.trim()).toBe('❚❚');
     playPausa.click();
     fixture.detectChanges();
@@ -77,5 +77,58 @@ describe('PlayerBarComponent', () => {
 
     expect(TestBed.inject(HomeNavegacionService).artistaSolicitado()).toEqual(cancion);
     expect(TestBed.inject(Router).url).toBe('/');
+  });
+
+  describe('US 17 - botones Anterior y Siguiente', () => {
+    const lista: Cancion[] = [
+      { id: 101, titulo: 'Track 1', genero: 'Rock', duracion: 180, portada: 'cover1.jpg', artista: { id: 1, nombre: 'Artista A' } },
+      { id: 102, titulo: 'Track 2', genero: 'Rock', duracion: 210, artista: { id: 2, nombre: 'Artista B' } },
+    ];
+    const anterior = () => element.querySelector('#btn-anterior') as HTMLButtonElement;
+    const siguiente = () => element.querySelector('#btn-siguiente') as HTMLButtonElement;
+    const texto = (id: string) => element.querySelector(id)?.textContent?.trim();
+
+    function reproducirDeLista(indice: number): void {
+      reproductor.reproducir(lista[indice], lista);
+      http.expectOne(`http://localhost:8080/api/historial/reproducir/${lista[indice].id}`).flush({});
+      fixture.detectChanges();
+    }
+
+    it('should enable only the buttons that can be used at each end of the queue', () => {
+      reproducirDeLista(0);
+      expect(anterior().disabled).toBe(true);
+      expect(siguiente().disabled).toBe(false);
+
+      siguiente().click();
+      http.expectOne('http://localhost:8080/api/historial/reproducir/102').flush({});
+      fixture.detectChanges();
+      expect(anterior().disabled).toBe(false);
+      expect(siguiente().disabled).toBe(true);
+    });
+
+    it('should immediately show the title, artist, duration and cover of the new song', () => {
+      reproducirDeLista(0);
+      expect(texto('#player-cancion-titulo')).toBe('Track 1');
+      expect(texto('#player-cancion-artista')).toBe('Artista A');
+      expect(texto('#player-duracion-total')).toBe('3:00');
+      expect(element.querySelector('img[alt="Track 1"]')).toBeTruthy();
+
+      siguiente().click();
+      http.expectOne('http://localhost:8080/api/historial/reproducir/102').flush({});
+      fixture.detectChanges();
+      expect(texto('#player-cancion-titulo')).toBe('Track 2');
+      expect(texto('#player-cancion-artista')).toBe('Artista B');
+      expect(texto('#player-duracion-total')).toBe('3:30');
+      expect(texto('#player-tiempo-actual')).toBe('0:00');
+      expect(element.querySelector('img')).toBeNull();
+    });
+
+    it('should go back with the previous button', () => {
+      reproducirDeLista(1);
+      anterior().click();
+      http.expectOne('http://localhost:8080/api/historial/reproducir/101').flush({});
+      fixture.detectChanges();
+      expect(texto('#player-cancion-titulo')).toBe('Track 1');
+    });
   });
 });

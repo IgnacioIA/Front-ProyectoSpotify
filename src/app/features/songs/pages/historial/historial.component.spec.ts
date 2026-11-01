@@ -87,6 +87,18 @@ describe('HistorialComponent', () => {
     expect(element.querySelector('.historial__play')?.textContent?.trim()).toBe('❚❚');
   });
 
+  it('should use the history songs, in the displayed order, as the queue (US 17)', () => {
+    cargar([antigua, reciente]);
+    (element.querySelectorAll('.historial__play')[1] as HTMLButtonElement).click();
+    http.expectOne(`${url}/reproducir/1`).flush({});
+
+    const reproductor = TestBed.inject(ReproductorService);
+    expect(reproductor.colaReproduccion().map((c) => c.id)).toEqual([2, 1]);
+    expect(reproductor.indiceActual()).toBe(1);
+    expect(reproductor.tieneAnterior()).toBe(true);
+    http.expectOne(url).flush([antigua, reciente]);
+  });
+
   it('should not reload the list when the backend rejects the playback', () => {
     vi.spyOn(console, 'error').mockImplementation(() => {});
     cargar([antigua]);

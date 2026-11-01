@@ -13,6 +13,12 @@ export interface RegistroRequest {
   contrasenia: string;
 }
 
+// POST /api/auth/verificar — codigo es el número de seis dígitos enviado por correo
+export interface VerificacionRequest {
+  email: string;
+  codigo: string;
+}
+
 // POST /api/auth/login — identificador acepta nombre de usuario o email
 export interface LoginRequest {
   identificador: string;

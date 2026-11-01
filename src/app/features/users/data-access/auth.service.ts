@@ -2,9 +2,11 @@
 import { Injectable, computed, signal } from '@angular/core';
 import { HttpClient, HttpErrorResponse } from '@angular/common/http';
 import { Observable, map, tap } from 'rxjs';
-import { LoginRequest, RegistroRequest, Usuario } from '../models/usuario.model';
+import { LoginRequest, RegistroRequest, Usuario, VerificacionRequest } from '../models/usuario.model';
 
 const CLAVE_USUARIO = 'usuario_spotify';
+// Estados cuyo `mensaje` el backend redacta para el usuario (el 503 avisa que no se pudo enviar el correo)
+const ESTADOS_CON_MENSAJE = [400, 401, 403, 404, 409, 503];
 
 @Injectable({
   providedIn: 'root'
@@ -18,11 +20,15 @@ export class AuthService {
 
   constructor(private http: HttpClient) {}
 
+  // La cuenta queda sin verificar: no se inicia sesión hasta que el usuario confirme el código del correo
   registrar(datos: RegistroRequest): Observable<Usuario> {
     return this.http.post<Usuario>(`${this.apiUrl}/registro`, datos).pipe(
-      map(sinContrasenia),
-      tap(usuario => this.guardarUsuario(usuario))
+      map(sinContrasenia)
     );
+  }
+
+  verificar(datos: VerificacionRequest): Observable<void> {
+    return this.http.post<void>(`${this.apiUrl}/verificar`, datos);
   }
 
   iniciarSesion(datos: LoginRequest): Observable<Usuario> {
@@ -83,7 +89,7 @@ export function mensajeErrorAuth(error: unknown): string {
 
     const mensaje = error.error?.mensaje;
 
-    if ((error.status === 400 || error.status === 401) && typeof mensaje === 'string') {
+    if (ESTADOS_CON_MENSAJE.includes(error.status) && typeof mensaje === 'string') {
       return mensaje;
     }
 
