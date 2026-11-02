@@ -247,4 +247,80 @@ describe('ReproductorService', () => {
       expect(reproductor.tieneAnterior()).toBe(false);
     });
   });
+
+  describe('US: Controlar el progreso de la canción', () => {
+    it('debe saltar a un segundo específico y continuar reproduciendo sin interrupciones si ya estaba activo', () => {
+      reproductor.reproducir(otra);
+      http.expectOne(urlRegistro(2)).flush({});
+      vi.advanceTimersByTime(2000);
+      expect(reproductor.tiempoActual()).toBe(2);
+      expect(reproductor.reproduciendo()).toBe(true);
+
+      reproductor.establecerTiempo(50);
+      expect(reproductor.tiempoActual()).toBe(50);
+      expect(reproductor.reproduciendo()).toBe(true);
+      expect(vi.getTimerCount()).toBe(1);
+
+      vi.advanceTimersByTime(1000);
+      expect(reproductor.tiempoActual()).toBe(51);
+    });
+
+    it('debe saltar al nuevo segundo pero mantenerse en pausa si la canción estaba pausada', () => {
+      reproductor.reproducir(otra);
+      http.expectOne(urlRegistro(2)).flush({});
+      reproductor.alternarReproduccion();
+      expect(reproductor.reproduciendo()).toBe(false);
+
+      reproductor.establecerTiempo(80);
+      expect(reproductor.tiempoActual()).toBe(80);
+      expect(reproductor.reproduciendo()).toBe(false);
+      expect(vi.getTimerCount()).toBe(0);
+
+      vi.advanceTimersByTime(3000);
+      expect(reproductor.tiempoActual()).toBe(80);
+    });
+
+    it('debe detener la reproducción si se salta al final de la canción', () => {
+      reproductor.reproducir(otra);
+      http.expectOne(urlRegistro(2)).flush({});
+
+      reproductor.establecerTiempo(200);
+      expect(reproductor.tiempoActual()).toBe(200);
+      expect(reproductor.reproduciendo()).toBe(false);
+      expect(vi.getTimerCount()).toBe(0);
+    });
+
+    it('debe limitar los valores entre 0 y la duración total de la pista', () => {
+      reproductor.reproducir(otra);
+      http.expectOne(urlRegistro(2)).flush({});
+
+      reproductor.establecerTiempo(-15);
+      expect(reproductor.tiempoActual()).toBe(0);
+
+      reproductor.establecerTiempo(500);
+      expect(reproductor.tiempoActual()).toBe(200);
+    });
+
+    it('no debe alterar el tiempo si la duración es 0 o desconocida', () => {
+      const cancionSinDuracion: Cancion = { id: 99, titulo: 'Sin datos', genero: 'Pop', duracion: 0 };
+      reproductor.reproducir(cancionSinDuracion);
+      http.expectOne(urlRegistro(99)).flush({});
+
+      reproductor.establecerTiempo(30);
+      expect(reproductor.tiempoActual()).toBe(0);
+    });
+
+    it('debe sincronizar audio.currentTime si existe un elemento de audio en el DOM', () => {
+      const audioEl = document.createElement('audio');
+      document.body.appendChild(audioEl);
+
+      reproductor.reproducir(otra);
+      http.expectOne(urlRegistro(2)).flush({});
+
+      reproductor.establecerTiempo(40);
+      expect(audioEl.currentTime).toBe(40);
+
+      document.body.removeChild(audioEl);
+    });
+  });
 });

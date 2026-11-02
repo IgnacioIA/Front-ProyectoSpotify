@@ -1,100 +1,98 @@
 <!-- BARRA REPRODUCTORA INFERIOR -->
 @if (reproductor.cancionActual(); as cancionActual) {
-  <div
-    style="position: fixed; bottom: 0; left: 0; right: 0; background: #181818; border-top: 1px solid #282828; padding: 14px 40px; display: flex; align-items: center; justify-content: space-between; z-index: 1000; box-shadow: 0 -4px 16px rgba(0,0,0,0.5);">
+<div
+  style="position: fixed; bottom: 0; left: 0; right: 0; background: #181818; border-top: 1px solid #282828; padding: 14px 40px; display: flex; align-items: center; justify-content: space-between; z-index: 1000; box-shadow: 0 -4px 16px rgba(0,0,0,0.5);">
 
-    <!-- Info Canción Actual (Carátula, Título, Artista, Favorito) -->
-    <div style="display: flex; align-items: center; gap: 16px; width: 35%; min-width: 0;">
-      <div style="width: 48px; height: 48px; border-radius: 4px; background: #282828; overflow: hidden; display: flex; align-items: center; justify-content: center; flex-shrink: 0;">
-        @if (cancionActual.portada) {
-          <img [src]="cancionActual.portada" [alt]="cancionActual.titulo" style="width: 100%; height: 100%; object-fit: cover;">
-        } @else {
-          <span style="font-size: 1.8rem;">🎵</span>
-        }
+  <!-- Info Canción Actual (Carátula, Título, Artista, Favorito) -->
+  <div style="display: flex; align-items: center; gap: 16px; width: 35%; min-width: 0;">
+    <div
+      style="width: 48px; height: 48px; border-radius: 4px; background: #282828; overflow: hidden; display: flex; align-items: center; justify-content: center; flex-shrink: 0;">
+      @if (cancionActual.portada) {
+      <img [src]="cancionActual.portada" [alt]="cancionActual.titulo"
+        style="width: 100%; height: 100%; object-fit: cover;">
+      } @else {
+      <span style="font-size: 1.8rem;">🎵</span>
+      }
+    </div>
+    <div style="min-width: 0; overflow: hidden;">
+      <div id="player-cancion-titulo"
+        style="font-weight: bold; color: white; font-size: 1rem; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">
+        {{ cancionActual.titulo }}</div>
+      <!-- Nombre del artista clickeable -->
+      <div id="player-cancion-artista" (click)="irAlArtista()"
+        style="color: #b3b3b3; font-size: 0.85rem; cursor: pointer; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;"
+        onmouseover="this.style.color='white'; this.style.textDecoration='underline'"
+        onmouseout="this.style.color='#b3b3b3'; this.style.textDecoration='none'">
+        {{ cancionActual.artista?.nombre }}
       </div>
-      <div style="min-width: 0; overflow: hidden;">
-        <div id="player-cancion-titulo" style="font-weight: bold; color: white; font-size: 1rem; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">{{ cancionActual.titulo }}</div>
-        <!-- Nombre del artista clickeable -->
-        <div id="player-cancion-artista" (click)="irAlArtista()"
-          style="color: #b3b3b3; font-size: 0.85rem; cursor: pointer; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;"
-          onmouseover="this.style.color='white'; this.style.textDecoration='underline'"
-          onmouseout="this.style.color='#b3b3b3'; this.style.textDecoration='none'">
-          {{ cancionActual.artista?.nombre }}
-        </div>
-      </div>
+    </div>
 
-      <button (click)="toggleFavorito()"
-        [style.color]="cancionActual.favorito ? '#1DB954' : '#b3b3b3'"
-        style="background: transparent; border: none; font-size: 1.2rem; cursor: pointer; margin-left: 8px; flex-shrink: 0;">
-        {{ cancionActual.favorito ? '💚' : '🤍' }}
+    <button (click)="toggleFavorito()" [style.color]="cancionActual.favorito ? '#1DB954' : '#b3b3b3'"
+      style="background: transparent; border: none; font-size: 1.2rem; cursor: pointer; margin-left: 8px; flex-shrink: 0;">
+      {{ cancionActual.favorito ? '💚' : '🤍' }}
+    </button>
+  </div>
+
+  <!-- Controles centrales (Anterior, Play/Pause, Siguiente) y barra de tiempo -->
+  <div style="display: flex; flex-direction: column; align-items: center; gap: 8px; width: 40%; max-width: 600px;">
+    <div style="display: flex; align-items: center; gap: 20px;">
+      <!-- Botón Anterior (US 17) -->
+      <button id="btn-anterior" type="button" (click)="reproductor.anterior()" [disabled]="!reproductor.tieneAnterior()"
+        aria-label="Canción anterior" [style.opacity]="reproductor.tieneAnterior() ? '1' : '0.35'"
+        [style.cursor]="reproductor.tieneAnterior() ? 'pointer' : 'not-allowed'"
+        style="background: transparent; border: none; color: white; display: flex; align-items: center; justify-content: center; padding: 8px; border-radius: 50%; transition: opacity 0.2s, transform 0.1s;"
+        onmouseover="if(!this.disabled) this.style.color='#1DB954'" onmouseout="this.style.color='white'">
+        <svg viewBox="0 0 24 24" width="20" height="20" fill="currentColor" aria-hidden="true">
+          <path d="M6 6h2v12H6zm12 0l-8.5 6 8.5 6z" />
+        </svg>
+      </button>
+
+      <!-- Botón Play/Pause -->
+      <button id="btn-play-pause" type="button" (click)="reproductor.alternarReproduccion()"
+        [attr.aria-label]="reproductor.reproduciendo() ? 'Pausar' : 'Reproducir'"
+        style="background: #1DB954; border: none; border-radius: 50%; width: 38px; height: 38px; color: black; font-size: 16px; cursor: pointer; display: flex; align-items: center; justify-content: center; transition: transform 0.1s;"
+        onmouseover="this.style.transform='scale(1.06)'" onmouseout="this.style.transform='scale(1)'">
+        {{ reproductor.reproduciendo() ? '❚❚' : '▶' }}
+      </button>
+
+      <!-- Botón Siguiente (US 17) -->
+      <button id="btn-siguiente" type="button" (click)="reproductor.siguiente()"
+        [disabled]="!reproductor.tieneSiguiente()" aria-label="Canción siguiente"
+        [style.opacity]="reproductor.tieneSiguiente() ? '1' : '0.35'"
+        [style.cursor]="reproductor.tieneSiguiente() ? 'pointer' : 'not-allowed'"
+        style="background: transparent; border: none; color: white; display: flex; align-items: center; justify-content: center; padding: 8px; border-radius: 50%; transition: opacity 0.2s, transform 0.1s;"
+        onmouseover="if(!this.disabled) this.style.color='#1DB954'" onmouseout="this.style.color='white'">
+        <svg viewBox="0 0 24 24" width="20" height="20" fill="currentColor" aria-hidden="true">
+          <path d="M6 6l8.5 6-8.5 6zM16 6h2v12h-2z" />
+        </svg>
       </button>
     </div>
 
-    <!-- Controles centrales (Anterior, Play/Pause, Siguiente) y barra de tiempo -->
-    <div style="display: flex; flex-direction: column; align-items: center; gap: 8px; width: 40%; max-width: 600px;">
-      <div style="display: flex; align-items: center; gap: 20px;">
-        <!-- Botón Anterior (US 17) -->
-        <button id="btn-anterior"
-          type="button"
-          (click)="reproductor.anterior()"
-          [disabled]="!reproductor.tieneAnterior()"
-          aria-label="Canción anterior"
-          [style.opacity]="reproductor.tieneAnterior() ? '1' : '0.35'"
-          [style.cursor]="reproductor.tieneAnterior() ? 'pointer' : 'not-allowed'"
-          style="background: transparent; border: none; color: white; display: flex; align-items: center; justify-content: center; padding: 8px; border-radius: 50%; transition: opacity 0.2s, transform 0.1s;"
-          onmouseover="if(!this.disabled) this.style.color='#1DB954'"
-          onmouseout="this.style.color='white'">
-          <svg viewBox="0 0 24 24" width="20" height="20" fill="currentColor" aria-hidden="true">
-            <path d="M6 6h2v12H6zm12 0l-8.5 6 8.5 6z"/>
-          </svg>
-        </button>
-
-        <!-- Botón Play/Pause -->
-        <button id="btn-play-pause"
-          type="button"
-          (click)="reproductor.alternarReproduccion()"
-          [attr.aria-label]="reproductor.reproduciendo() ? 'Pausar' : 'Reproducir'"
-          style="background: #1DB954; border: none; border-radius: 50%; width: 38px; height: 38px; color: black; font-size: 16px; cursor: pointer; display: flex; align-items: center; justify-content: center; transition: transform 0.1s;"
-          onmouseover="this.style.transform='scale(1.06)'"
-          onmouseout="this.style.transform='scale(1)'">
-          {{ reproductor.reproduciendo() ? '❚❚' : '▶' }}
-        </button>
-
-        <!-- Botón Siguiente (US 17) -->
-        <button id="btn-siguiente"
-          type="button"
-          (click)="reproductor.siguiente()"
-          [disabled]="!reproductor.tieneSiguiente()"
-          aria-label="Canción siguiente"
-          [style.opacity]="reproductor.tieneSiguiente() ? '1' : '0.35'"
-          [style.cursor]="reproductor.tieneSiguiente() ? 'pointer' : 'not-allowed'"
-          style="background: transparent; border: none; color: white; display: flex; align-items: center; justify-content: center; padding: 8px; border-radius: 50%; transition: opacity 0.2s, transform 0.1s;"
-          onmouseover="if(!this.disabled) this.style.color='#1DB954'"
-          onmouseout="this.style.color='white'">
-          <svg viewBox="0 0 24 24" width="20" height="20" fill="currentColor" aria-hidden="true">
-            <path d="M6 6l8.5 6-8.5 6zM16 6h2v12h-2z"/>
-          </svg>
-        </button>
+    <!-- Tiempos y barra de progreso -->
+    <div style="display: flex; align-items: center; gap: 10px; width: 100%; font-size: 0.75rem; color: #b3b3b3;">
+      <span id="player-tiempo-actual" style="min-width: 35px; text-align: right;">{{ formatearDuracion(tiempoVisual)
+        }}</span>
+      <div class="player-progreso-contenedor" (click)="onBarraClick($event)"
+        style="flex-grow: 1; position: relative; display: flex; align-items: center;">
+        <input id="player-barra-progreso" type="range" min="0" [max]="cancionActual.duracion || 0"
+          [value]="tiempoVisual" [disabled]="barraDeshabilitada" step="1" aria-label="Control de progreso de la canción"
+          (input)="onProgresoInput($event)" (change)="onProgresoChange($event)" (mousedown)="iniciarArrastre()"
+          (touchstart)="iniciarArrastre()" (mouseup)="finalizarArrastre($event)" (touchend)="finalizarArrastre($event)"
+          class="player-slider-progreso"
+          [style.background]="'linear-gradient(to right, #1DB954 ' + porcentajeProgreso + '%, #4d4d4d ' + porcentajeProgreso + '%)'"
+          [style.cursor]="barraDeshabilitada ? 'not-allowed' : 'pointer'"
+          [style.opacity]="barraDeshabilitada ? '0.4' : '1'">
       </div>
-
-      <!-- Tiempos y barra de progreso -->
-      <div style="display: flex; align-items: center; gap: 10px; width: 100%; font-size: 0.75rem; color: #b3b3b3;">
-        <span id="player-tiempo-actual" style="min-width: 35px; text-align: right;">{{ formatearDuracion(reproductor.tiempoActual()) }}</span>
-        <div
-          style="flex-grow: 1; background: #4d4d4d; height: 4px; border-radius: 2px; position: relative; overflow: hidden;">
-          <div [style.width.%]="cancionActual.duracion ? (reproductor.tiempoActual() / cancionActual.duracion) * 100 : 0"
-            style="background: #1DB954; height: 100%; transition: width 0.3s linear;"></div>
-        </div>
-        <span id="player-duracion-total" style="min-width: 35px;">{{ formatearDuracion(cancionActual.duracion) }}</span>
-      </div>
+      <span id="player-duracion-total" style="min-width: 35px;">{{ formatearDuracion(cancionActual.duracion) }}</span>
     </div>
-
-    <!-- Volumen -->
-    <div style="display: flex; align-items: center; justify-content: flex-end; gap: 8px; width: 25%;">
-      <span style="color: #b3b3b3; font-size: 0.9rem;">🔊</span>
-      <input type="range" min="0" max="1" step="0.01" value="1" (input)="onVolumeChange($event)"
-        style="width: 90px; accent-color: #1DB954; cursor: pointer;">
-    </div>
-
   </div>
+
+  <!-- Volumen -->
+  <div style="display: flex; align-items: center; justify-content: flex-end; gap: 8px; width: 25%;">
+    <span style="color: #b3b3b3; font-size: 0.9rem;">🔊</span>
+    <input type="range" min="0" max="1" step="0.01" value="1" (input)="onVolumeChange($event)"
+      style="width: 90px; accent-color: #1DB954; cursor: pointer;">
+  </div>
+
+</div>
 }

@@ -105,6 +105,34 @@ export class ReproductorService {
     }
   }
 
+  // Controlar progreso de la canción (US): adelanta, retrocede o salta a un segundo específico
+  establecerTiempo(nuevoTiempo: number): void {
+    const cancion = this.cancion();
+    if (!cancion || !cancion.duracion || cancion.duracion <= 0) return;
+
+    // Limitar entre 0 y la duración total de la canción
+    const tiempoClampeado = Math.max(0, Math.min(Math.round(nuevoTiempo), cancion.duracion));
+    this.tiempo.set(tiempoClampeado);
+
+    // Sincronizar elemento <audio> si está presente en el DOM
+    const audioElement = typeof document !== 'undefined' ? document.querySelector('audio') : null;
+    if (audioElement) {
+      audioElement.currentTime = tiempoClampeado;
+    }
+
+    if (tiempoClampeado >= cancion.duracion) {
+      this.enReproduccion.set(false);
+      this.detenerIntervalo();
+    } else if (this.enReproduccion()) {
+      // Reiniciar intervalo para continuar reproduciendo fluidamente desde el nuevo punto
+      this.iniciarIntervalo();
+    }
+  }
+
+  seek(nuevoTiempo: number): void {
+    this.establecerTiempo(nuevoTiempo);
+  }
+
   // Una canción quitada de una playlist deja de estar en la cola (comportamiento de US 17)
   quitarDeCola(cancionId: number): void {
     if (!this.cola().some(c => c.id === cancionId)) return;

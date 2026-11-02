@@ -17,6 +17,9 @@ import { formatearDuracion } from '../../shared/utils/formatear-duracion';
 export class PlayerBarComponent {
   readonly formatearDuracion = formatearDuracion;
 
+  estaArrastrando = false;
+  tiempoArrastre = 0;
+
   constructor(
     readonly reproductor: ReproductorService,
     private cancionService: CancionService,
@@ -41,6 +44,82 @@ export class PlayerBarComponent {
 
     this.homeNavegacion.artistaSolicitado.set(cancion);
     this.router.navigate(['/']);
+  }
+
+  // Control del progreso de la canción (US)
+  get duracionTotal(): number {
+    return this.reproductor.cancionActual()?.duracion || 0;
+  }
+
+  get barraDeshabilitada(): boolean {
+    return !this.duracionTotal || this.duracionTotal <= 0;
+  }
+
+  // Mientras se arrastra muestra el tiempo temporal para evitar parpadeos (jitter)
+  get tiempoVisual(): number {
+    return this.estaArrastrando ? this.tiempoArrastre : this.reproductor.tiempoActual();
+  }
+
+  get porcentajeProgreso(): number {
+    const duracion = this.duracionTotal;
+    if (!duracion || duracion <= 0) return 0;
+    return Math.max(0, Math.min(100, (this.tiempoVisual / duracion) * 100));
+  }
+
+  iniciarArrastre(): void {
+    if (this.barraDeshabilitada) return;
+    this.estaArrastrando = true;
+    this.tiempoArrastre = this.reproductor.tiempoActual();
+  }
+
+  onProgresoInput(event: Event): void {
+    if (this.barraDeshabilitada) return;
+    const input = event.target as HTMLInputElement;
+    const valor = Number(input.value);
+    this.estaArrastrando = true;
+    this.tiempoArrastre = isNaN(valor) ? 0 : Math.max(0, Math.min(valor, this.duracionTotal));
+  }
+
+  onProgresoChange(event: Event): void {
+    if (this.barraDeshabilitada) return;
+    const input = event.target as HTMLInputElement;
+    const valor = Number(input.value);
+    const nuevoSegundo = isNaN(valor) ? 0 : Math.max(0, Math.min(valor, this.duracionTotal));
+    this.estaArrastrando = false;
+    this.reproductor.establecerTiempo(nuevoSegundo);
+  }
+
+  finalizarArrastre(event?: Event): void {
+    if (!this.estaArrastrando) return;
+    if (event) {
+      const input = event.target as HTMLInputElement;
+      if (input && input.value !== undefined) {
+        const valor = Number(input.value);
+        if (!isNaN(valor)) {
+          this.tiempoArrastre = Math.max(0, Math.min(valor, this.duracionTotal));
+        }
+      }
+    }
+    this.estaArrastrando = false;
+    this.reproductor.establecerTiempo(this.tiempoArrastre);
+  }
+
+  onBarraClick(event: MouseEvent): void {
+    if (this.barraDeshabilitada) return;
+    if ((event.target as HTMLElement)?.tagName === 'INPUT') return;
+    const contenedor = event.currentTarget as HTMLElement;
+    const rect = contenedor.getBoundingClientRect();
+    if (rect.width <= 0) return;
+    const clickX = event.clientX - rect.left;
+    const porcentaje = Math.max(0, Math.min(1, clickX / rect.width));
+    const nuevoSegundo = Math.round(porcentaje * this.duracionTotal);
+    this.reproductor.establecerTiempo(nuevoSegundo);
+  }
+
+  saltarA(segundo: number): void {
+    if (this.barraDeshabilitada) return;
+    this.estaArrastrando = false;
+    this.reproductor.establecerTiempo(segundo);
   }
 
   onVolumeChange(event: any) {

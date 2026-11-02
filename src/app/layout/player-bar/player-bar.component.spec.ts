@@ -131,4 +131,81 @@ describe('PlayerBarComponent', () => {
       expect(texto('#player-cancion-titulo')).toBe('Track 1');
     });
   });
+
+  describe('US: Controlar el progreso de la canción', () => {
+    const barraProgreso = () => element.querySelector('#player-barra-progreso') as HTMLInputElement;
+    const tiempoActual = () => element.querySelector('#player-tiempo-actual')?.textContent?.trim();
+    const duracionTotal = () => element.querySelector('#player-duracion-total')?.textContent?.trim();
+
+    it('debe mostrar la barra con min 0, max con la duración y el tiempo inicial formateado', () => {
+      reproducir();
+      expect(barraProgreso()).toBeTruthy();
+      expect(barraProgreso().min).toBe('0');
+      expect(barraProgreso().max).toBe('354');
+      expect(barraProgreso().value).toBe('0');
+      expect(tiempoActual()).toBe('0:00');
+      expect(duracionTotal()).toBe('5:54');
+    });
+
+    it('debe actualizar el tiempo visual durante el arrastre (input) sin alterar el tiempo del servicio para evitar jitter', () => {
+      reproducir();
+      const slider = barraProgreso();
+
+      slider.value = '120';
+      slider.dispatchEvent(new Event('input'));
+      fixture.detectChanges();
+
+      expect(tiempoActual()).toBe('2:00');
+      expect(reproductor.tiempoActual()).toBe(0);
+    });
+
+    it('debe aplicar la nueva posición al reproductor al soltar el cursor (change)', () => {
+      reproducir();
+      const slider = barraProgreso();
+
+      slider.value = '150';
+      slider.dispatchEvent(new Event('change'));
+      fixture.detectChanges();
+
+      expect(reproductor.tiempoActual()).toBe(150);
+      expect(tiempoActual()).toBe('2:30');
+      expect(reproductor.reproduciendo()).toBe(true);
+    });
+
+    it('debe permitir saltar al hacer clic en el contenedor de la barra', () => {
+      reproducir();
+      const contenedor = element.querySelector('.player-progreso-contenedor') as HTMLElement;
+
+      vi.spyOn(contenedor, 'getBoundingClientRect').mockReturnValue({
+        left: 0,
+        top: 0,
+        width: 200,
+        height: 20,
+        right: 200,
+        bottom: 20,
+        x: 0,
+        y: 0,
+        toJSON: () => {},
+      });
+
+      const clickEvent = new MouseEvent('click', { clientX: 100 });
+      contenedor.dispatchEvent(clickEvent);
+      fixture.detectChanges();
+
+      expect(reproductor.tiempoActual()).toBe(177);
+      expect(tiempoActual()).toBe('2:57');
+    });
+
+    it('debe deshabilitar la barra si la canción no tiene duración o es 0', () => {
+      const cancionSinDuracion: Cancion = { id: 99, titulo: 'Cargando...', genero: 'Pop', duracion: 0 };
+      reproductor.reproducir(cancionSinDuracion);
+      http.expectOne('http://localhost:8080/api/historial/reproducir/99').flush({});
+      fixture.detectChanges();
+
+      expect(barraProgreso().disabled).toBe(true);
+
+      fixture.componentInstance.onProgresoChange({ target: { value: '50' } } as any);
+      expect(reproductor.tiempoActual()).toBe(0);
+    });
+  });
 });
